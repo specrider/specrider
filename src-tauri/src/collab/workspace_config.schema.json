@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SpecRider workspace config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "statuses",
+    "review_required_signoffs",
+    "default_status"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "statuses": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "label", "category"],
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "category": {
+            "enum": ["draft", "active", "review", "blocked", "done"]
+          },
+          "terminal": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "review_required_signoffs": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "default_status": {
+      "type": "string",
+      "minLength": 1
+    },
+    "repos": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}

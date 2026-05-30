@@ -1,0 +1,347 @@
+/* === Pins =========================================================
+ *  Pin glyph appears as a small leading marker on rows that are
+ *  pinned (so the user can spot the pin status at a glance), and the
+ *  Pinned group at the top of sidebar / outline reuses existing group
+ *  header chrome with a single accent-colored dot to mark it out.
+ *  All pin/unpin actions are right-click only — no row-level buttons.
+ */
+.tree-folder.pinned-group .bdot,
+.tree-folder .bdot.pinned {
+  background: var(--accent);
+}
+
+.pr-pin-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: -1px;
+  width: 11px;
+  height: 11px;
+  margin-right: 4px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.document-row.pinned .pr-title {
+  /* No special title color — the glyph carries the signal. */
+}
+
+/* Outline pin glyph — slots in front of the heading text on pinned
+ * heading rows. The glyph itself takes the same 14px column the
+ * .ol-mark would, so the layout stays consistent across mixed
+ * pinned / unpinned rows. */
+.ol-pin-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  margin-right: 2px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* When an outline row is pinned, the JSX inserts the glyph as an
+ * extra child after the caret/mark — push the grid to 4 tracks so
+ * the text + meta still line up the same as a regular row. */
+.ol-row.pinned:not(.in-pinned-group) {
+  grid-template-columns: 14px 14px 1fr auto;
+}
+
+/* Outline "Pinned" section header — mirrors the existing depth-0
+ * folder treatment (uppercase, muted, count badge) without being a
+ * button since it's not collapsible in v1; the user has so few pins
+ * that hiding them defeats the surfacing purpose. */
+.ol-section-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px 4px 8px;
+  margin-top: 4px;
+  font-size: calc(var(--ui-size, 13px) * 0.77);
+  font-weight: 600;
+  color: var(--ink-3);
+  letter-spacing: 0.08em;
+}
+.ol-section-head .ol-section-label {
+  flex: 1 1 auto;
+}
+.ol-section-head .ol-section-count {
+  margin-left: auto;
+  color: var(--ink-4);
+  font-family: var(--font-mono);
+  font-size: calc(var(--ui-size, 13px) * 0.77);
+  letter-spacing: normal;
+  font-weight: 500;
+}
+.ol-section-head.pinned-group::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+/* Rows inside the outline's Pinned group are simpler — just a glyph
+ * + heading text, no caret / progress meta. Use a tighter grid. */
+.ol-row.in-pinned-group {
+  grid-template-columns: 14px 1fr;
+  padding-left: 8px;
+}
+.ol-row.in-pinned-group .ol-text {
+  font-weight: 500;
+  color: var(--ink);
+}
+.ol-row.in-pinned-group.orphan .ol-text {
+  color: var(--ink-4);
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-4);
+}
+
+/* Pinned group sticks to the top of the scrolling outline list so
+ * the user can always reach a pinned section even after scrolling
+ * deep into the heading tree. The negative top margin and matching
+ * top padding cancel the .outline-list's own top padding so scrolled
+ * rows above the group can't peek through; opaque background + tall
+ * z-index keep the heading tree underneath fully obscured. */
+.ol-pinned-group {
+  position: sticky;
+  top: -6px;
+  z-index: 5;
+  background: var(--paper);
+  margin-top: -6px;
+  padding-top: 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 6px;
+}
+
+/* === Git status cluster (status bar) === */
+.sb-git-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.sb-branch-button {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.sb-branch-button:hover {
+  color: var(--ink);
+}
+.sb-git-cluster.detached .sb-branch-name {
+  color: var(--amber);
+}
+.sb-git-warn {
+  font-size: 0.85em;
+  color: var(--amber);
+  background: var(--amber-soft);
+  padding: 0 5px;
+  border-radius: 3px;
+}
+.sb-git-dirty {
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 1px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--ink-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.sb-git-dirty:hover {
+  color: var(--ink);
+  border-color: var(--rule);
+}
+.sb-git-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--amber);
+  display: inline-block;
+}
+.sb-git-incoming,
+.sb-git-outgoing {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 4px;
+  font-family: inherit;
+  font-size: inherit;
+}
+.sb-git-incoming {
+  color: var(--accent-fg);
+}
+.sb-git-outgoing {
+  color: var(--sage);
+}
+
+/* === Branch picker popover === */
+.branch-picker {
+  position: absolute;
+  top: 38px;
+  left: 100px;
+  width: 360px;
+  max-height: 60vh;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  box-shadow: 0 16px 40px -8px color-mix(in oklch, black 30%, transparent);
+  display: flex;
+  flex-direction: column;
+  z-index: 1100;
+  overflow: hidden;
+}
+.branch-picker-head {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.branch-picker-search {
+  width: 100%;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  outline: none;
+}
+.branch-picker-search:focus {
+  border-color: var(--accent);
+}
+.branch-picker-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+.branch-picker-loading,
+.branch-picker-empty {
+  padding: 14px 12px;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+.branch-picker-truncated {
+  padding: 4px 12px;
+  font-size: 11px;
+  color: var(--ink-3);
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--rule-soft);
+}
+.branch-picker-error,
+.branch-picker-warn {
+  padding: 8px 12px;
+  font-size: 12px;
+  background: var(--amber-soft);
+  color: var(--amber);
+  border-bottom: 1px solid var(--rule-soft);
+}
+.branch-picker-warn {
+  background: color-mix(in oklch, var(--amber-soft) 50%, transparent);
+}
+.branch-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.branch-picker-item button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--ink);
+}
+.branch-picker-item button:hover:not(:disabled),
+.branch-picker-item.active button:not(:disabled) {
+  background: var(--paper-2);
+}
+.branch-picker-item button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.branch-picker-item.current button {
+  color: var(--accent-fg);
+  font-weight: 500;
+}
+.branch-picker-item.remote button {
+  color: var(--ink-2);
+  font-style: italic;
+}
+.branch-picker-name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.branch-picker-meta {
+  color: var(--ink-3);
+  font-size: 11px;
+}
+.branch-picker-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--rule-soft);
+}
+.branch-picker-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.branch-picker-new,
+.branch-picker-abort button,
+.branch-picker-new-form button {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--ink-2);
+}
+.branch-picker-new:hover,
+.branch-picker-new-form button:hover {
+  background: var(--paper-3);
+  color: var(--ink);
+}
+.branch-picker-new-form {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 4px;
+  width: 100%;
+}
+.branch-picker-new-form input,
+.branch-picker-new-form select {
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+.branch-picker-abort {
+  padding: 6px 10px;
+  border-top: 1px solid var(--rule-soft);
+  text-align: center;
+}

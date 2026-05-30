@@ -1,0 +1,738 @@
+/* === Settings window === */
+
+.settings-app {
+  height: 100vh;
+  display: grid;
+  grid-template-rows: 42px 1fr;
+  background: var(--paper);
+  color: var(--ink);
+}
+.settings-app.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.settings-titlebar {
+  display: flex;
+  align-items: center;
+  /* Tracks the active theme via CSS variables so dark themes get a
+     darkened bar without per-theme overrides. */
+  background: linear-gradient(180deg, var(--paper-2), var(--paper));
+  border-bottom: 1px solid var(--rule);
+  -webkit-app-region: drag;
+  -webkit-user-select: none;
+  user-select: none;
+  padding-right: 10px;
+}
+.settings-titlebar .tb-traffic-spacer {
+  width: 90px;
+}
+.os-linux .settings-titlebar .tb-traffic-spacer,
+.os-windows .settings-titlebar .tb-traffic-spacer {
+  width: 0;
+}
+.settings-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: 0;
+}
+.settings-body {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 0;
+}
+.settings-rail {
+  background: var(--paper-2);
+  border-right: 1px solid var(--rule-soft);
+  padding: 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.settings-tab {
+  text-align: left;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  padding: 7px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  transition:
+    background 0.08s,
+    color 0.08s;
+}
+.settings-tab:hover {
+  background: var(--paper-3);
+  color: var(--ink);
+}
+.settings-tab.on {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.settings-pane {
+  overflow-y: auto;
+  padding: 28px 32px 60px;
+}
+.settings-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.settings-section-head h2 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.settings-reset {
+  font-size: 11px;
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 3px 8px;
+}
+.settings-reset:hover {
+  background: var(--paper-2);
+  color: var(--ink-2);
+}
+
+.settings-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.settings-field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* Inline mode: toggles + their label share a row, hint flows below. */
+.settings-field.inline .settings-field-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.settings-field.inline .settings-field-label {
+  flex: 1 1 auto;
+}
+.settings-field.inline .settings-field-control {
+  flex: 0 0 auto;
+}
+
+.settings-field-label {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 550;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.settings-field-control {
+  display: flex;
+  align-items: center;
+}
+.settings-field-hint {
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+/* === Settings controls === */
+
+.ctl-toggle {
+  width: 36px;
+  height: 20px;
+  background: var(--paper-3);
+  border: 1px solid var(--rule);
+  border-radius: 99px;
+  padding: 1px;
+  position: relative;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+.ctl-toggle.on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.ctl-toggle-thumb {
+  display: block;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.14s ease-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.ctl-toggle.on .ctl-toggle-thumb {
+  transform: translateX(16px);
+}
+
+.ctl-slider {
+  width: 240px;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--paper-3);
+  border-radius: 2px;
+  outline: none;
+}
+.ctl-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--accent);
+  cursor: pointer;
+}
+.ctl-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--accent);
+  cursor: pointer;
+}
+
+.ctl-radio-group {
+  display: inline-flex;
+  background: var(--paper-2);
+  border: 1px solid var(--rule-soft);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+.ctl-radio {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
+  padding: 4px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+}
+.ctl-radio:hover {
+  color: var(--ink);
+}
+.ctl-radio.on {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 0 0 0.5px var(--rule);
+}
+
+.ctl-select {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 5px 10px;
+  min-width: 200px;
+}
+.ctl-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.settings-custom-themes {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--rule-soft);
+}
+.settings-custom-label {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink-3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.settings-custom-hint {
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+  margin-top: 8px;
+}
+.settings-custom-hint code {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-2);
+  background: var(--paper-2);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.ctl-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+.ctl-theme-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--rule-soft);
+  background: var(--paper);
+  border-radius: 7px;
+  cursor: pointer;
+  transition:
+    border-color 0.08s,
+    box-shadow 0.08s,
+    transform 0.08s;
+  text-align: center;
+}
+.ctl-theme-card:hover {
+  border-color: var(--rule);
+  transform: translateY(-1px);
+}
+.ctl-theme-card.on {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.ctl-theme-swatch {
+  height: 36px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid var(--rule-soft);
+}
+.ctl-theme-swatch span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 0.5px solid rgba(0, 0, 0, 0.18);
+  flex-shrink: 0;
+}
+.ctl-theme-name {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ctl-theme-card.on .ctl-theme-name {
+  color: var(--ink);
+}
+
+/* === Font picker ============================================ */
+.ctl-font {
+  position: relative;
+  width: 100%;
+}
+.ctl-font-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.08s;
+}
+.ctl-font-trigger:hover {
+  border-color: var(--ink-4);
+}
+.ctl-font-trigger-name {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ctl-font-trigger-caret {
+  color: var(--ink-3);
+  font-size: 10px;
+  margin-left: 8px;
+}
+.ctl-font-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  max-height: 360px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.1),
+    0 1px 4px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+.ctl-font-search {
+  padding: 8px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.ctl-font-search input {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 1px solid var(--rule-soft);
+  border-radius: 5px;
+  font-family: var(--font-sans);
+}
+.ctl-font-search input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.ctl-font-categories {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.ctl-font-category {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-3);
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.ctl-font-category:hover {
+  color: var(--ink-2);
+  background: var(--paper-3);
+}
+.ctl-font-category.on {
+  background: var(--ink);
+  color: var(--paper);
+}
+.ctl-font-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 4px;
+}
+.ctl-font-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 16px;
+  color: var(--ink);
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ctl-font-row:hover {
+  background: var(--paper-3);
+}
+.ctl-font-row.on {
+  background: var(--accent-soft);
+  color: var(--accent-fg);
+}
+.ctl-font-empty {
+  padding: 16px;
+  font-size: 12px;
+  color: var(--ink-3);
+  text-align: center;
+}
+.ctl-font-custom {
+  border-top: 1px solid var(--rule-soft);
+  padding: 8px;
+}
+.ctl-font-custom input {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  background: var(--paper-2);
+  border: 1px solid var(--rule-soft);
+  border-radius: 5px;
+  font-family: var(--font-mono);
+}
+.ctl-font-custom input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.ctl-color {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.ctl-color-swatch {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+.ctl-color-swatch::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.ctl-color-swatch::-webkit-color-swatch {
+  border: none;
+  border-radius: 5px;
+}
+.ctl-color-input {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 5px 10px;
+  width: 200px;
+}
+.ctl-color-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.ctl-color-clear,
+.ctl-folder-clear {
+  background: transparent;
+  border: none;
+  color: var(--ink-3);
+  font-size: 16px;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ctl-color-clear:hover,
+.ctl-folder-clear:hover {
+  background: var(--paper-3);
+  color: var(--ink);
+}
+
+.ctl-folder {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ctl-folder-btn {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 5px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+}
+.ctl-folder-btn:hover {
+  background: var(--paper-2);
+}
+.ctl-folder-path {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-3);
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ctl-folder-path em {
+  font-style: italic;
+  color: var(--ink-4);
+}
+
+/* === System & Updates diagnostics === */
+
+.settings-static {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-action {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 5px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+}
+.settings-action:hover {
+  background: var(--paper-2);
+}
+.settings-action.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper);
+}
+.settings-action.secondary {
+  background: var(--paper);
+}
+.settings-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.settings-action:disabled:hover {
+  background: var(--paper);
+}
+.settings-action.primary:disabled:hover {
+  background: var(--accent);
+}
+
+.workspace-config-editor {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.workspace-config-editor-meta,
+.workspace-config-editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.workspace-config-editor-state {
+  color: var(--ink-3);
+  font-size: 11.5px;
+}
+.workspace-json-editor {
+  position: relative;
+  width: 100%;
+  height: min(52vh, 520px);
+  min-height: 310px;
+  max-height: 680px;
+  resize: vertical;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--paper);
+}
+.workspace-json-editor:focus-within {
+  border-color: var(--accent);
+}
+.workspace-json-editor .cm-editor {
+  height: 100%;
+}
+.workspace-json-editor .cm-json-key {
+  color: var(--accent-fg);
+}
+.workspace-json-editor .cm-json-string {
+  color: var(--sage);
+}
+.workspace-json-editor .cm-json-number,
+.workspace-json-editor .cm-json-boolean {
+  color: var(--amber);
+}
+.workspace-json-editor .cm-json-null {
+  color: var(--ink-4);
+}
+.workspace-json-editor .cm-json-punctuation {
+  color: var(--ink-3);
+}
+.workspace-json-editor .cm-json-error {
+  color: var(--rose);
+}
+.workspace-config-editor-message {
+  color: var(--ink-3);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+.workspace-config-editor-message.error {
+  color: var(--rose);
+}
+
+.ctl-diagnostics {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ctl-diagnostics-status {
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  color: var(--ink-3);
+  /* Reserve vertical space so the row doesn't reflow when the
+     confirmation appears / disappears on the 2s timer. */
+  min-height: 1em;
+}
+
+/* === Typography toggles (Settings → Typography) === */
+
+/* Hyphenation off — overrides the auto-hyphens defaults on body prose. */
+body.no-hyphens .document,
+body.no-hyphens .document p,
+body.no-hyphens .document li,
+body.no-hyphens .document blockquote {
+  hyphens: manual;
+  -webkit-hyphens: manual;
+}
+
+/* Body ligatures off — kills standard + contextual + discretionary
+   ligatures in the reader prose. Headings, mono, and UI chrome are
+   unaffected. */
+body.no-body-ligatures .reader,
+body.no-body-ligatures .document {
+  font-feature-settings: "kern";
+  font-variant-ligatures: none;
+}
+
+/* Mono ligatures on — opt-in for fonts like Fira Code / JetBrains Mono
+   / Cascadia Code that ship coding ligatures. Inverts the literal-by-
+   default rule above. */
+body.mono-ligatures .document code,
+body.mono-ligatures .document pre,
+body.mono-ligatures .document pre code {
+  font-feature-settings:
+    "liga" 1,
+    "calt" 1,
+    "zero" 1;
+  font-variant-ligatures: normal;
+}

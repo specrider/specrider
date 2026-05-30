@@ -1,0 +1,78 @@
+# Contributing to SpecRider
+
+Thanks for considering a contribution. SpecRider is a small project; the workflow is intentionally lightweight.
+
+## What to contribute
+
+SpecRider is currently maintained by one person in their spare time. To keep review tractable, please scope contributions accordingly:
+
+**Welcome:**
+- Bug fixes
+- Small, focused improvements to existing features
+- Documentation fixes and clarifications
+- Test coverage for existing behavior
+
+**Please open an issue first** (before writing code) for:
+- New features of any meaningful size
+- Refactors that touch more than a handful of files
+- Changes to core architecture, build, or packaging
+- Dependency additions or upgrades beyond patch bumps
+
+**Not accepted:**
+- Large AI-generated PRs that sprawl across the codebase. If a tool wrote it, you still need to have read it, understood it, and kept it tight. PRs that look like dumped model output will be closed without review.
+- Sweeping stylistic rewrites or "cleanup" passes unrelated to a specific bug or feature.
+
+When in doubt, open an issue and ask before investing time. A two-line "is this something you'd take?" saves everyone the round trip.
+
+## Quick start
+
+```bash
+pnpm install
+pnpm tauri dev          # run the desktop app with hot reload
+pnpm test               # vitest
+(cd src-tauri && cargo test --lib)
+```
+
+`pnpm dev` runs the frontend-only Vite server if you want to iterate on UI without spinning up the Tauri shell.
+
+## Workflow
+
+1. Fork → branch → open a PR against `main`.
+2. Keep PRs focused — one feature or one fix per PR. Mixed-concern diffs get split.
+3. Match existing code style. The Rust crate is rustfmt-clean; the frontend follows the conventions visible in `src/components/`.
+4. Add tests when you change behavior. The codebase has solid coverage in `tests/`, `src/**/*.test.ts`, and `src-tauri/src/**` — extend the nearest existing suite.
+5. Keep commits clean (`git rebase -i` is your friend). Each commit should build and pass tests.
+
+## Sign-off (DCO)
+
+Every commit must carry a `Signed-off-by:` trailer, signaling your agreement with the [Developer Certificate of Origin](https://developercertificate.org/). Add it automatically with:
+
+```bash
+git commit -s -m "Your message"
+```
+
+Or set it as a default for the repo:
+
+```bash
+git config format.signoff true
+```
+
+Unsigned commits will be rejected by the DCO check.
+
+Contributions come in under the project's inbound license, GPL-3.0-or-later (inbound = outbound). There's no CLA — the DCO sign-off is all that's required.
+
+## Pull request checklist
+
+- [ ] PR is focused on one feature or fix
+- [ ] Tests added/updated and passing locally
+- [ ] `pnpm check` clean
+- [ ] `(cd src-tauri && cargo check)` clean
+- [ ] Every commit signed with `-s`
+
+## Filing issues
+
+Bug reports: include OS, app version, repro steps, and (if possible) a minimal Markdown file that triggers the issue. Feature requests: explain the use case before the proposed solution — the use case is more useful than the implementation idea.
+
+## Questions
+
+Open a GitHub issue. The maintainer reads everything; it just may take a few days.

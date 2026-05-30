@@ -1,0 +1,136 @@
+/* === Welcome splash (empty workspace) ===
+   Two index sections (actions, history) vertically centered in the
+   viewport. Magazine table-of-contents typography: serif rows with a
+   dotted leader between the label and the right-aligned shortcut /
+   path, mono section heads with a hairline rule. */
+.welcome {
+  width: min(720px, calc(100% - 48px));
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.welcome-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.welcome-section-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 2px;
+}
+.welcome-section-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--rule-soft);
+}
+.welcome-section-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  white-space: nowrap;
+}
+
+.welcome-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.welcome-row {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  width: 100%;
+  padding: 9px 8px 9px 4px;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 17px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  transition:
+    background 0.08s,
+    color 0.08s;
+}
+.welcome-row:hover {
+  background: var(--paper-2);
+  color: var(--accent);
+}
+.welcome-row:hover .welcome-row-arrow,
+.welcome-row:hover .welcome-row-shortcut {
+  color: var(--accent);
+}
+
+/* Arrow / number gutter — same width across both sections so labels
+   align vertically across the two lists. */
+.welcome-row-arrow,
+.welcome-row-shortcut {
+  flex: 0 0 28px;
+  text-align: center;
+  color: var(--ink-4);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 0.08s;
+}
+.welcome-row-arrow {
+  font-size: 18px;
+  line-height: 1;
+  position: relative;
+  top: 1px;
+}
+
+.welcome-row-label {
+  flex: 0 0 auto;
+  letter-spacing: -0.005em;
+}
+
+/* Dotted leader — classic table-of-contents trick. The dots fill the
+   gap between the label and the right-aligned shortcut/path so the
+   eye can jog across without losing the line. */
+.welcome-row-leader {
+  flex: 1;
+  min-width: 24px;
+  align-self: end;
+  margin-bottom: 7px;
+  height: 1px;
+  background-image: radial-gradient(circle, var(--rule) 0.7px, transparent 1px);
+  background-size: 6px 2px;
+  background-repeat: repeat-x;
+  background-position: bottom;
+  opacity: 0.55;
+}
+
+.welcome-row-meta {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 50%;
+}
+.welcome-row-kbd {
+  display: inline-flex;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-4);
+}
+.welcome-row-kbd kbd {
+  font: inherit;
+  background: transparent;
+  border: none;
+  padding: 0;
+}

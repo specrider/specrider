@@ -1,0 +1,261 @@
+:root {
+  --paper: oklch(0.985 0.005 85);
+  --paper-2: oklch(0.965 0.008 85);
+  --paper-3: oklch(0.94 0.01 85);
+  --rule: oklch(0.88 0.012 85);
+  --rule-soft: oklch(0.92 0.01 85);
+  --ink: oklch(0.22 0.012 60);
+  --ink-2: oklch(0.38 0.014 60);
+  --ink-3: oklch(0.56 0.014 70);
+  --ink-4: oklch(0.72 0.012 75);
+  --accent: oklch(0.52 0.13 265);
+  --accent-soft: oklch(0.92 0.04 265);
+  --accent-fg: oklch(0.42 0.14 265);
+  --sage: oklch(0.62 0.07 150);
+  --sage-soft: oklch(0.93 0.03 150);
+  --amber: oklch(0.72 0.11 75);
+  --amber-soft: oklch(0.95 0.04 80);
+  --rose: oklch(0.62 0.13 25);
+  --rose-soft: oklch(0.94 0.03 25);
+
+  /* Reader-pane background — sits between --paper and --paper-2 by
+     default. Theme variants override below. */
+  --reader-bg: oklch(0.978 0.006 82);
+  /* Callout backgrounds — slightly tinted, theme-aware. */
+  --callout-note-bg: oklch(0.97 0.012 265);
+  --callout-note-border: oklch(0.88 0.04 265);
+  --callout-imp-bg: oklch(0.97 0.018 75);
+  --callout-imp-border: oklch(0.88 0.06 75);
+
+  --font-serif: "Source Serif 4", Georgia, serif;
+  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius: 6px;
+  --radius-lg: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: oklch(0.18 0.008 80);
+    --paper-2: oklch(0.21 0.01 80);
+    --paper-3: oklch(0.25 0.012 80);
+    --rule: oklch(0.3 0.012 80);
+    --rule-soft: oklch(0.26 0.01 80);
+    --ink: oklch(0.92 0.008 85);
+    --ink-2: oklch(0.78 0.01 85);
+    --ink-3: oklch(0.6 0.012 80);
+    --ink-4: oklch(0.45 0.014 80);
+    --accent: oklch(0.72 0.13 265);
+    --accent-soft: oklch(0.3 0.08 265);
+    --accent-fg: oklch(0.82 0.12 265);
+    --sage: oklch(0.7 0.08 150);
+    --sage-soft: oklch(0.3 0.04 150);
+    --amber: oklch(0.78 0.12 75);
+    --amber-soft: oklch(0.32 0.06 75);
+    --rose: oklch(0.7 0.13 25);
+    --rose-soft: oklch(0.3 0.06 25);
+    --reader-bg: oklch(0.205 0.008 80);
+    --callout-note-bg: oklch(0.26 0.04 265);
+    --callout-note-border: oklch(0.34 0.06 265);
+    --callout-imp-bg: oklch(0.27 0.05 75);
+    --callout-imp-border: oklch(0.36 0.08 75);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+body {
+  font-family: var(--font-sans);
+  /* Default UI font size — chrome that doesn't pin its own size will
+     inherit this. Driven by Settings → Typography → "UI size". */
+  font-size: var(--ui-size, 13px);
+  font-feature-settings: "cv11", "ss01", "ss03", "kern", "calt";
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
+  font-optical-sizing: auto;
+  background: var(--paper-3);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+#root {
+  height: 100vh;
+}
+.boot-shell {
+  height: 100vh;
+  display: grid;
+  place-items: center;
+  background: var(--paper);
+  color: var(--ink-3);
+  font-family: var(--font-sans);
+}
+.boot-splash {
+  width: 150px;
+  height: 150px;
+  display: grid;
+  place-items: center;
+}
+.boot-loader {
+  width: 112px;
+  height: 112px;
+  color: color-mix(in oklch, var(--accent) 78%, var(--ink));
+  filter: drop-shadow(
+    0 12px 30px color-mix(in oklch, var(--accent) 20%, transparent)
+  );
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+input,
+button,
+textarea {
+  font-family: inherit;
+}
+
+/* === App shell === */
+.app {
+  height: 100vh;
+  display: grid;
+  grid-template-rows: 38px 1fr;
+  background: var(--paper);
+}
+
+/* Off-screen but exposed to assistive tech. Used for headings and
+ * labels that aren't visually present in the design. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Visually hidden until focused. First focusable element in the app —
+ * keyboard users can land in the document with one Tab instead of
+ * walking through the title bar and browser pane. */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 8px;
+  z-index: 100;
+  padding: 8px 14px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 8px;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.app.empty {
+  grid-template-rows: 1fr;
+  align-items: center;
+  justify-items: center;
+  text-align: left;
+  position: relative;
+  overflow: auto;
+}
+.empty-drag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 38px;
+  -webkit-app-region: drag;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.empty-state {
+  max-width: 420px;
+  padding: 0 24px;
+}
+.empty-state-title {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 8px;
+  font-variation-settings: "opsz" 28;
+}
+.empty-state-body {
+  font-size: 13px;
+  color: var(--ink-3);
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+.empty-state-body code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-2);
+  background: var(--paper-2);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.empty-state-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.empty-state-cta {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: white;
+  transition:
+    background 0.08s,
+    border-color 0.08s;
+}
+.empty-state-cta:hover {
+  background: oklch(0.46 0.14 265);
+  border-color: oklch(0.46 0.14 265);
+}
+.empty-state-cta.secondary {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--rule);
+}
+.empty-state-cta.secondary:hover {
+  background: var(--paper-2);
+}
+.empty-state-hint {
+  margin-top: 16px;
+  font-size: 11.5px;
+  color: var(--ink-4);
+  line-height: 1.6;
+}
+.empty-state-hint code,
+.empty-state-hint kbd {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+  background: var(--paper-2);
+  border: 1px solid var(--rule-soft);
+  padding: 1px 5px;
+  border-radius: 3px;
+}

@@ -1,0 +1,676 @@
+/* === Commit panel (embedded inside Diff Explorer when unstaged is
+   selected — replaces the old modal-based commit dialog and pending-
+   changes panel). === */
+.commit-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--rule);
+}
+.commit-panel.empty {
+  padding: 14px 16px;
+  color: var(--ink-3);
+  font-size: 13px;
+  text-align: center;
+}
+.commit-panel-message {
+  border: none;
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink);
+  background: transparent;
+  outline: none;
+  resize: vertical;
+  min-height: 60px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.commit-panel-message::placeholder {
+  color: var(--ink-4);
+  opacity: 1;
+}
+.commit-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+}
+.commit-panel-meta {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.commit-panel-error {
+  font-size: 11px;
+  color: oklch(0.5 0.2 20);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+.commit-panel-spacer {
+  flex: 1;
+}
+.commit-panel-button {
+  min-width: 84px;
+  background: color-mix(in oklch, var(--accent-soft) 58%, var(--paper-3));
+  color: var(--accent-fg);
+  border: 1px solid color-mix(in oklch, var(--accent) 45%, var(--rule));
+  border-radius: 5px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.commit-panel-button:hover:not(:disabled) {
+  background: color-mix(in oklch, var(--accent-soft) 72%, var(--paper));
+  border-color: color-mix(in oklch, var(--accent) 65%, var(--rule));
+}
+.commit-panel-button:active:not(:disabled) {
+  background: color-mix(in oklch, var(--accent-soft) 82%, var(--paper));
+}
+.commit-panel-button:disabled {
+  background: var(--paper-3);
+  border-color: var(--rule);
+  color: var(--ink-4);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+/* (legacy modal styles preserved below for branch-picker error blocks
+   and other consumers that still reference them.) */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in oklch, black 25%, transparent);
+  z-index: 1100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+}
+
+@media (prefers-reduced-transparency: no-preference) {
+  .modal-backdrop {
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+}
+
+/* === Commit dialog (deprecated — kept while transitional) === */
+.commit-dialog {
+  width: 560px;
+  max-width: 92vw;
+  max-height: 80vh;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  box-shadow: 0 24px 64px -8px color-mix(in oklch, black 35%, transparent);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.commit-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.commit-dialog-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.commit-dialog-close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--ink-3);
+  line-height: 1;
+}
+.commit-dialog-close:hover {
+  color: var(--ink);
+}
+.commit-dialog-message {
+  border: none;
+  border-bottom: 1px solid var(--rule-soft);
+  padding: 12px 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink);
+  background: transparent;
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+}
+.commit-dialog-files {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+  max-height: 30vh;
+}
+.commit-dialog-files-head {
+  padding: 4px 16px;
+  font-size: 11px;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.commit-dialog-files ul,
+.pending-changes-list,
+.pending-changes-outside ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.commit-dialog-file {
+  padding: 4px 16px;
+}
+.commit-dialog-file label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.commit-dialog-file.outside label {
+  opacity: 0.6;
+}
+.commit-dialog-chip {
+  display: inline-block;
+  width: 16px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 0;
+  border-radius: 3px;
+}
+.commit-dialog-chip.chip-modified,
+.pending-changes-chip.chip-modified {
+  color: var(--amber);
+  background: var(--amber-soft);
+}
+.commit-dialog-chip.chip-added,
+.pending-changes-chip.chip-added {
+  color: var(--sage);
+  background: var(--sage-soft);
+}
+.commit-dialog-chip.chip-deleted,
+.pending-changes-chip.chip-deleted {
+  color: oklch(0.5 0.2 20);
+  background: oklch(0.95 0.04 20);
+}
+.commit-dialog-chip.chip-untracked,
+.pending-changes-chip.chip-untracked {
+  color: var(--accent-fg);
+  background: var(--accent-soft);
+}
+.commit-dialog-chip.chip-renamed,
+.pending-changes-chip.chip-renamed {
+  color: var(--accent-fg);
+  background: var(--accent-soft);
+}
+.commit-dialog-chip.chip-conflicted,
+.pending-changes-chip.chip-conflicted {
+  color: oklch(0.5 0.2 20);
+  background: oklch(0.95 0.04 20);
+}
+.commit-dialog-path {
+  font-family: var(--font-mono);
+  color: var(--ink);
+}
+.commit-dialog-warn {
+  padding: 8px 16px;
+  background: var(--amber-soft);
+  color: var(--amber);
+  font-size: 12px;
+}
+.commit-dialog-error,
+.pending-changes-error {
+  padding: 8px 16px;
+  background: oklch(0.95 0.04 20);
+  color: oklch(0.5 0.2 20);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+.commit-dialog-actions,
+.pending-changes-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--rule-soft);
+}
+.pending-changes-actions {
+  justify-content: flex-start;
+  align-items: center;
+}
+.commit-dialog-actions button,
+.pending-changes-primary,
+.pending-changes-discard,
+.pending-changes-confirm-yes,
+.pending-changes-confirm-no {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  color: var(--ink-2);
+}
+.commit-dialog-actions button:hover:not(:disabled) {
+  background: var(--paper-3);
+  color: var(--ink);
+}
+.commit-dialog-primary,
+.pending-changes-primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: var(--accent);
+}
+.commit-dialog-primary:hover:not(:disabled),
+.pending-changes-primary:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--accent) 88%, var(--accent-fg) 12%);
+  border-color: color-mix(in oklab, var(--accent) 88%, var(--accent-fg) 12%);
+}
+.commit-dialog-actions button:disabled,
+.pending-changes-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* === Pending changes panel === */
+.pending-changes-panel {
+  width: 580px;
+  max-width: 92vw;
+  max-height: 80vh;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  box-shadow: 0 24px 64px -8px color-mix(in oklch, black 35%, transparent);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.pending-changes-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.pending-changes-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.pending-changes-close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--ink-3);
+}
+.pending-changes-empty {
+  padding: 30px 20px;
+  color: var(--ink-3);
+  text-align: center;
+  font-size: 13px;
+}
+.pending-changes-list {
+  padding: 4px 0;
+  overflow-y: auto;
+  flex: 1;
+}
+.pending-changes-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 16px;
+  font-size: 12px;
+}
+.pending-changes-row.outside {
+  opacity: 0.6;
+}
+.pending-changes-chip {
+  width: 16px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 0;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.pending-changes-path {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  color: var(--ink);
+  padding: 0;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pending-changes-path:hover:not(:disabled) {
+  color: var(--accent-fg);
+}
+.pending-changes-path:disabled {
+  cursor: default;
+  color: var(--ink);
+}
+.pending-changes-spacer {
+  flex: 1;
+}
+.pending-changes-discard,
+.pending-changes-confirm-yes,
+.pending-changes-confirm-no {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+.pending-changes-confirm-text {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.pending-changes-warn {
+  font-size: 12px;
+  color: var(--amber);
+}
+.pending-changes-outside {
+  border-top: 1px solid var(--rule-soft);
+  padding: 4px 0;
+}
+.pending-changes-outside-head {
+  padding: 4px 16px;
+  font-size: 11px;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* === Pull summary popover === */
+.pull-summary-popover {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 480px;
+  max-width: 92vw;
+  max-height: 50vh;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  box-shadow: 0 24px 64px -8px color-mix(in oklch, black 30%, transparent);
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.pull-summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rule-soft);
+  font-size: 13px;
+}
+.pull-summary-head button {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--ink-3);
+}
+.pull-summary-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  overflow-y: auto;
+}
+.pull-summary-list li {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 4px 10px;
+  padding: 6px 14px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.pull-summary-list li:last-child {
+  border-bottom: none;
+}
+.pull-summary-sha {
+  grid-row: 1 / 3;
+  font-family: var(--font-mono);
+  color: var(--accent-fg);
+  font-size: 11px;
+}
+.pull-summary-subject {
+  font-family: var(--font-sans);
+  color: var(--ink);
+}
+.pull-summary-meta {
+  font-family: var(--font-sans);
+  color: var(--ink-3);
+  font-size: 11px;
+}
+
+/* === Conflict banner === */
+.conflict-banner {
+  background: oklch(0.95 0.04 20);
+  border-bottom: 1px solid oklch(0.5 0.2 20);
+  padding: 10px 16px;
+  font-size: 13px;
+  color: oklch(0.4 0.2 20);
+}
+.conflict-banner-head {
+  margin-bottom: 6px;
+}
+.conflict-banner-list {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+.conflict-banner-list button {
+  background: transparent;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: oklch(0.4 0.2 20);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+.conflict-banner-list button:disabled {
+  cursor: default;
+  text-decoration: none;
+}
+.conflict-banner-actions {
+  display: flex;
+  gap: 8px;
+}
+.conflict-banner-actions button {
+  background: var(--paper);
+  border: 1px solid oklch(0.5 0.2 20);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  color: oklch(0.4 0.2 20);
+}
+.conflict-banner-actions button:hover:not(:disabled) {
+  background: oklch(0.99 0.02 20);
+}
+.conflict-banner-abort {
+  background: transparent;
+}
+
+/* === Workspace config prompt === */
+.workspace-config-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: oklch(0.96 0.025 235);
+  border-bottom: 1px solid oklch(0.72 0.07 235);
+  padding: 10px 16px;
+  font-size: 13px;
+  color: oklch(0.36 0.08 235);
+}
+.workspace-config-copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+.workspace-config-copy strong {
+  color: oklch(0.3 0.09 235);
+  font-weight: 650;
+}
+.workspace-config-copy code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: oklch(0.28 0.08 235);
+}
+.workspace-config-prompt-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+.workspace-config-prompt-actions button {
+  background: var(--paper);
+  border: 1px solid oklch(0.64 0.08 235);
+  border-radius: 4px;
+  color: oklch(0.32 0.09 235);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 10px;
+}
+.workspace-config-prompt-actions button:hover:not(:disabled) {
+  background: oklch(0.99 0.01 235);
+}
+.workspace-config-prompt-actions button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+@media (max-width: 760px) {
+  .workspace-config-prompt {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* === Toast viewport === */
+.toast-viewport {
+  position: fixed;
+  bottom: 32px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 1200;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 8px 24px -6px color-mix(in oklch, black 25%, transparent);
+  min-width: 280px;
+  max-width: 480px;
+  animation: toastSlideIn 0.18s ease-out;
+}
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.toast-success {
+  border-color: var(--sage);
+}
+.toast-warn {
+  border-color: var(--amber);
+}
+.toast-error {
+  border-color: oklch(0.55 0.2 20);
+}
+.toast-message {
+  flex: 1;
+}
+.toast-action {
+  background: transparent;
+  border: 1px solid var(--rule);
+  padding: 2px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--ink-2);
+}
+.toast-close {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--ink-3);
+}
+
+/* === Settings: text + number inputs (used by Git section) === */
+.ctl-text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 5px 10px;
+  min-width: 200px;
+}
+.ctl-text:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.ctl-number {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ctl-number-input {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 4px 8px;
+  width: 90px;
+  text-align: right;
+}
+.ctl-number-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.ctl-number-suffix {
+  font-size: 12px;
+  color: var(--ink-3);
+}

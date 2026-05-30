@@ -1,0 +1,407 @@
+/* === Documents browser (left) === */
+.browser {
+  background: var(--paper-2);
+  border-right: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.browser * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+.browser input {
+  -webkit-user-select: text;
+  user-select: text;
+}
+/* .browser-head now inherits the .pane-tab-head shell (height, bg,
+ * border, alignment, gradient). The h2 / search input were dropped —
+ * title becomes the Documents tab; ⌘P / ⌘⇧F replace the inline
+ * search. The pane-tab-head's flex layout puts .pane-tabs on the
+ * left and .browser-head-actions on the right; we just need the
+ * justify-content override so they push to opposite ends. */
+.pane-tab-head {
+  justify-content: space-between;
+}
+
+.browser-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0 16px;
+}
+
+/* === Folder tree === */
+.tree-folder {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 4px;
+  border: none;
+  background: transparent;
+  width: calc(100% - 4px);
+  margin: 0 2px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  transition:
+    background 0.08s,
+    color 0.08s;
+}
+.tree-folder,
+.tree-folder * {
+  cursor: pointer;
+}
+.tree-folder:hover {
+  background: var(--paper-3);
+  color: var(--ink);
+}
+.tree-folder:focus-visible,
+.document-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+/* Drag-over highlight on a folder header — accent halo around the
+   row to make the drop target obvious. */
+.tree-folder.drop-target {
+  background: var(--accent-soft, var(--paper-3));
+  box-shadow: inset 0 0 0 1.5px var(--accent, var(--ink-3));
+  color: var(--ink);
+}
+
+/* Plan row in mid-drag dims to signal "this is moving"; the receiving
+   row in another folder gets the same accent halo as folder headers. */
+.document-row.dragging {
+  opacity: 0.45;
+}
+.document-row.drop-target {
+  background: var(--accent-soft, var(--paper-3));
+  box-shadow: inset 0 0 0 1.5px var(--accent, var(--ink-3));
+}
+
+.tree-children {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-3px);
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    grid-template-rows 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 140ms ease,
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s linear 180ms;
+}
+.tree-children.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    grid-template-rows 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 140ms ease,
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s;
+}
+.tree-children-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tree-folder.depth-0 {
+  padding-left: 8px;
+  font-size: calc(var(--ui-size, 13px) * 0.77);
+  font-weight: 600;
+  color: var(--ink-3);
+  letter-spacing: 0.08em;
+  margin-top: 4px;
+}
+.tree-folder.depth-1 {
+  padding-left: 16px;
+  font-size: calc(var(--ui-size, 13px) * 0.92);
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.tree-folder.depth-2 {
+  padding-left: 28px;
+  font-size: calc(var(--ui-size, 13px) * 0.92);
+  color: var(--ink-2);
+}
+.tree-folder.depth-3 {
+  padding-left: 40px;
+  font-size: calc(var(--ui-size, 13px) * 0.88);
+  color: var(--ink-3);
+}
+.tree-folder.depth-4 {
+  padding-left: 52px;
+  font-size: calc(var(--ui-size, 13px) * 0.88);
+  color: var(--ink-3);
+}
+.tree-folder.depth-5 {
+  padding-left: 64px;
+  font-size: calc(var(--ui-size, 13px) * 0.85);
+  color: var(--ink-3);
+}
+
+.tree-caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  color: var(--ink-3);
+  transition:
+    transform 0.14s,
+    color 0.08s;
+  flex-shrink: 0;
+}
+.tree-folder.open .tree-caret {
+  transform: rotate(90deg);
+}
+.tree-folder:hover .tree-caret {
+  color: var(--ink);
+}
+
+.tree-folder .bdot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink-4);
+  flex-shrink: 0;
+}
+.tree-folder.active .bdot {
+  background: var(--accent);
+}
+.tree-folder.upcoming .bdot {
+  background: var(--amber);
+}
+.tree-folder.backlog .bdot {
+  background: var(--ink-3);
+}
+.tree-folder.archive .bdot {
+  background: var(--ink-4);
+}
+
+.tree-folder-label {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+.tree-folder-count {
+  margin-left: auto;
+  color: var(--ink-4);
+  font-family: var(--font-mono);
+  font-size: calc(var(--ui-size, 13px) * 0.77);
+  flex-shrink: 0;
+}
+
+/* Plan rows sit one level shallower than their depth class would
+   suggest so the title text lines up with the parent folder's label.
+   Folder label X = pad + 12 (caret) + 6 (gap); plan title X = pad +
+   14 (pr-mark) + 8 (gap). Solving for parity gives plan-pad =
+   parent-folder-pad − 4. */
+.document-row.tree-depth-1 {
+  padding-left: 4px;
+}
+.document-row.tree-depth-2 {
+  padding-left: 12px;
+}
+.document-row.tree-depth-3 {
+  padding-left: 24px;
+}
+.document-row.tree-depth-4 {
+  padding-left: 36px;
+}
+.document-row.tree-depth-5 {
+  padding-left: 48px;
+}
+
+/* Browser-head action buttons (collapse-all / expand-all). Sits at
+ * the right edge of the pane-tab-head; its own children center
+ * vertically inside the 47px tab strip. */
+.browser-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 8px;
+}
+.browser-head-btn {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--rule-soft);
+  background: var(--paper);
+  color: var(--ink-3);
+  font-size: 14px;
+  line-height: 1;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.08s,
+    color 0.08s,
+    border-color 0.08s;
+  cursor: pointer;
+}
+.browser-head-btn:hover {
+  background: var(--paper-3);
+  color: var(--ink);
+  border-color: var(--rule);
+}
+
+/* "+ new plan / new folder" affordance — small dropdown anchored to
+   the + button. */
+.browser-head-add {
+  position: relative;
+  display: inline-flex;
+}
+.browser-add-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 30;
+  min-width: 140px;
+  padding: 4px 0;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow:
+    0 12px 32px oklch(0% 0 0 / 0.16),
+    0 2px 6px oklch(0% 0 0 / 0.08);
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+.browser-add-menu button {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.browser-add-menu button:hover {
+  background: var(--paper-2);
+}
+
+/* Inline create-row at the top of the document tree. Mirrors the
+   plan-row layout enough to feel placed but is visually distinct
+   (italic prefix label) so it reads as a transient input. */
+.document-create-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 12px 8px;
+  border-bottom: 1px dashed var(--rule-soft);
+  margin-bottom: 4px;
+}
+.document-create-prefix {
+  font-size: 10.5px;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.document-create-prefix code {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  background: var(--paper-2);
+  padding: 0 4px;
+  border-radius: 2px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.browser-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 6px;
+  width: 18px;
+  height: 18px;
+  background: transparent;
+  border: none;
+  color: var(--ink-4);
+  font-size: 14px;
+  line-height: 1;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.browser-search-clear:hover {
+  background: var(--paper-3);
+  color: var(--ink-2);
+}
+
+.document-row {
+  appearance: none;
+  -webkit-appearance: none;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 8px;
+  padding: 8px 12px 9px 14px;
+  margin: 0 6px;
+  width: calc(100% - 12px);
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.08s;
+}
+.document-row,
+.document-row * {
+  cursor: pointer;
+}
+.document-row:hover {
+  background: var(--paper-3);
+}
+.document-row.active {
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+.document-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.document-row .pr-mark {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: 6px;
+  background: transparent;
+}
+.document-row.shipped .pr-mark {
+  background: var(--sage);
+  opacity: 0.5;
+}
+
+.document-row .pr-body {
+  display: block;
+  min-width: 0;
+}
+.document-row .pr-title {
+  display: block;
+  font-size: var(--ui-size, 13px);
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.005em;
+}
+.document-row.bucket-archive .pr-title {
+  color: var(--ink-3);
+}

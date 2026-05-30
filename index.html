@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SpecRider</title>
+    <!-- Anti-flash: paint a polarity-correct background while the
+         document parses, before React mounts. The OS-level flash is
+         killed separately by `visible: false` in tauri.conf.json +
+         the `show_window` Tauri command the frontend invokes after
+         `useApplyCss` runs. This <style> handles the document-level
+         paint that React then takes over. -->
+    <style>
+      :root {
+        color-scheme: light dark;
+        --boot-paper: oklch(0.985 0.005 85);
+        --boot-ink: oklch(0.22 0.012 60);
+        --boot-ink-3: oklch(0.56 0.014 70);
+        --boot-accent: oklch(0.52 0.13 265);
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--boot-paper);
+      }
+      #root { min-height: 100vh; }
+      .boot-shell {
+        height: 100vh;
+        display: grid;
+        place-items: center;
+        background: var(--boot-paper);
+        color: var(--boot-ink-3);
+      }
+      .boot-splash {
+        width: 150px;
+        height: 150px;
+        display: grid;
+        place-items: center;
+      }
+      .boot-loader {
+        width: 112px;
+        height: 112px;
+        color: color-mix(in oklch, var(--boot-accent) 78%, var(--boot-ink));
+        filter: drop-shadow(0 12px 30px color-mix(in oklch, var(--boot-accent) 20%, transparent));
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --boot-paper: oklch(0.18 0.008 80);
+          --boot-ink: oklch(0.92 0.008 85);
+          --boot-ink-3: oklch(0.6 0.012 80);
+          --boot-accent: oklch(0.72 0.13 265);
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="root">
+      <div class="boot-shell" role="status">
+        <div class="boot-splash">
+          <svg
+            class="boot-loader"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 56 56"
+            width="112"
+            height="112"
+            role="img"
+            aria-label="Loading"
+          >
+            <title>Loading</title>
+            <desc>A diagonal stripe sweeps from corner to corner.</desc>
+            <defs>
+              <circle id="boot-static-dot" r="2.4" fill="currentColor" opacity="0.12" />
+              <circle id="boot-static-lit" r="3.1" />
+            </defs>
+            <style>
+              .boot-loader-lit {
+                fill: currentColor;
+                opacity: 0;
+                animation: boot-loader-scan 1100ms cubic-bezier(0.25, 1, 0.5, 1) infinite both;
+              }
+              @keyframes boot-loader-scan {
+                0% { opacity: 0; }
+                8% { opacity: 1; }
+                36% { opacity: 0.05; }
+                100% { opacity: 0; }
+              }
+              @media (prefers-reduced-motion: reduce) {
+                .boot-loader-lit {
+                  animation: none;
+                  opacity: 0.45;
+                }
+              }
+              .d00 { animation-delay: -90ms; }
+              .d01, .d10 { animation-delay: 2ms; }
+              .d02, .d11, .d20 { animation-delay: 94ms; }
+              .d03, .d12, .d21, .d30 { animation-delay: 185ms; }
+              .d04, .d13, .d22, .d31, .d40 { animation-delay: 277ms; }
+              .d14, .d23, .d32, .d41 { animation-delay: 369ms; }
+              .d24, .d33, .d42 { animation-delay: 460ms; }
+              .d34, .d43 { animation-delay: 552ms; }
+              .d44 { animation-delay: 644ms; }
+            </style>
+            <use href="#boot-static-dot" x="6" y="6" />
+            <use href="#boot-static-dot" x="17" y="6" />
+            <use href="#boot-static-dot" x="28" y="6" />
+            <use href="#boot-static-dot" x="39" y="6" />
+            <use href="#boot-static-dot" x="50" y="6" />
+            <use href="#boot-static-dot" x="6" y="17" />
+            <use href="#boot-static-dot" x="17" y="17" />
+            <use href="#boot-static-dot" x="28" y="17" />
+            <use href="#boot-static-dot" x="39" y="17" />
+            <use href="#boot-static-dot" x="50" y="17" />
+            <use href="#boot-static-dot" x="6" y="28" />
+            <use href="#boot-static-dot" x="17" y="28" />
+            <use href="#boot-static-dot" x="28" y="28" />
+            <use href="#boot-static-dot" x="39" y="28" />
+            <use href="#boot-static-dot" x="50" y="28" />
+            <use href="#boot-static-dot" x="6" y="39" />
+            <use href="#boot-static-dot" x="17" y="39" />
+            <use href="#boot-static-dot" x="28" y="39" />
+            <use href="#boot-static-dot" x="39" y="39" />
+            <use href="#boot-static-dot" x="50" y="39" />
+            <use href="#boot-static-dot" x="6" y="50" />
+            <use href="#boot-static-dot" x="17" y="50" />
+            <use href="#boot-static-dot" x="28" y="50" />
+            <use href="#boot-static-dot" x="39" y="50" />
+            <use href="#boot-static-dot" x="50" y="50" />
+            <use class="boot-loader-lit d00" href="#boot-static-lit" x="6" y="6" />
+            <use class="boot-loader-lit d01" href="#boot-static-lit" x="17" y="6" />
+            <use class="boot-loader-lit d02" href="#boot-static-lit" x="28" y="6" />
+            <use class="boot-loader-lit d03" href="#boot-static-lit" x="39" y="6" />
+            <use class="boot-loader-lit d04" href="#boot-static-lit" x="50" y="6" />
+            <use class="boot-loader-lit d10" href="#boot-static-lit" x="6" y="17" />
+            <use class="boot-loader-lit d11" href="#boot-static-lit" x="17" y="17" />
+            <use class="boot-loader-lit d12" href="#boot-static-lit" x="28" y="17" />
+            <use class="boot-loader-lit d13" href="#boot-static-lit" x="39" y="17" />
+            <use class="boot-loader-lit d14" href="#boot-static-lit" x="50" y="17" />
+            <use class="boot-loader-lit d20" href="#boot-static-lit" x="6" y="28" />
+            <use class="boot-loader-lit d21" href="#boot-static-lit" x="17" y="28" />
+            <use class="boot-loader-lit d22" href="#boot-static-lit" x="28" y="28" />
+            <use class="boot-loader-lit d23" href="#boot-static-lit" x="39" y="28" />
+            <use class="boot-loader-lit d24" href="#boot-static-lit" x="50" y="28" />
+            <use class="boot-loader-lit d30" href="#boot-static-lit" x="6" y="39" />
+            <use class="boot-loader-lit d31" href="#boot-static-lit" x="17" y="39" />
+            <use class="boot-loader-lit d32" href="#boot-static-lit" x="28" y="39" />
+            <use class="boot-loader-lit d33" href="#boot-static-lit" x="39" y="39" />
+            <use class="boot-loader-lit d34" href="#boot-static-lit" x="50" y="39" />
+            <use class="boot-loader-lit d40" href="#boot-static-lit" x="6" y="50" />
+            <use class="boot-loader-lit d41" href="#boot-static-lit" x="17" y="50" />
+            <use class="boot-loader-lit d42" href="#boot-static-lit" x="28" y="50" />
+            <use class="boot-loader-lit d43" href="#boot-static-lit" x="39" y="50" />
+            <use class="boot-loader-lit d44" href="#boot-static-lit" x="50" y="50" />
+          </svg>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

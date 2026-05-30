@@ -1,0 +1,316 @@
+/* === Pane layout === */
+.panes {
+  position: relative;
+  display: grid;
+  /* gridTemplateColumns is overridden inline by App.tsx with the live
+     pane widths. The splitter columns are 6px each; 1fr in the middle. */
+  grid-template-columns: 260px 6px 1fr 6px 320px;
+  grid-template-areas: "browser split-left reader split-right outline";
+  min-height: 0;
+  background: var(--paper);
+  overflow: hidden;
+  transition: grid-template-columns 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Zen State: when every pane is hidden, the workspace becomes a calm
+   surface with a faint focus mark that periodically breathes three times. */
+.zen-state {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: color-mix(in oklch, var(--reader-bg) 72%, var(--paper) 28%);
+}
+.zen-focus-mark {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklch, var(--ink) 24%, transparent);
+  opacity: 0.24;
+  transform: scale(0.92);
+  animation: zen-breathing-loop 42s ease-in-out infinite;
+}
+.zen-focus-mark::before {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklch, var(--ink) 7%, transparent);
+}
+.zen-focus-mark::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--ink) 28%, transparent);
+  transform: translate(-50%, -50%);
+}
+
+@keyframes zen-breathing-loop {
+  0%,
+  4.762% {
+    transform: scale(0.92);
+    opacity: 0.24;
+  }
+  9.524%,
+  19.048%,
+  28.571% {
+    transform: scale(1.86);
+    opacity: 0.58;
+  }
+  14.286%,
+  23.81% {
+    transform: scale(0.96);
+    opacity: 0.36;
+  }
+  33.333%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.24;
+  }
+}
+/* Class toggled by App.tsx splitter handlers; suppresses the eased
+   column / row transitions during drag so widths track the cursor 1:1. */
+body.resizing-panes .panes,
+body.resizing-panes .middle-stack,
+body.resizing-panes .action-column {
+  transition: none;
+}
+.pane {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition:
+    opacity 140ms ease,
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 140ms ease;
+}
+.browser {
+  grid-area: browser;
+}
+.outline {
+  grid-area: outline;
+}
+/* Wrapper that takes the outline grid area when we render tabs in
+ * the right rail (diff explorer mode). Internally a flex column
+ * with a tab bar at the top + the active pane filling the rest. */
+.right-rail {
+  grid-area: outline;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--paper-2);
+  border-left: 1px solid var(--rule);
+  overflow: hidden;
+}
+.right-rail > .pane.outline {
+  /* When .outline is inside .right-rail, the outer wrapper owns the
+   * grid area; the .outline child should just fill the remaining
+   * flex space and not paint its own border (the wrapper already has
+   * one). */
+  border-left: none;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+/* Tab-styled pane headers — shared by left rail (Documents) and
+ * right rail (Outline / Commits). 47px tall to match the reader,
+ * terminal, and diff explorer headers; gradient background to match
+ * the .splitter::before treatment so all top-level chrome aligns. */
+.pane-tab-head {
+  display: flex;
+  align-items: stretch;
+  height: 47px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--rule-soft);
+  background: linear-gradient(180deg, var(--paper), var(--paper-2) 80%);
+  -webkit-user-select: none;
+  user-select: none;
+}
+.pane-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0 6px;
+}
+.pane-tab {
+  background: transparent;
+  border: none;
+  padding: 0 12px;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: calc(var(--ui-size, 13px) * 0.92);
+  line-height: 1;
+  font-weight: 500;
+  color: var(--ink-3);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  display: inline-flex;
+  align-items: center;
+  letter-spacing: 0.005em;
+}
+.pane-tab:hover {
+  color: var(--ink);
+}
+.pane-tab.on {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+/* `.reader` no longer claims the grid area directly — the middle column
+ * is owned by `.middle-stack` (see Terminal pane block) which contains
+ * Reader + (when open) the agent terminal. */
+.splitter-left {
+  grid-area: split-left;
+}
+.splitter-right {
+  grid-area: split-right;
+}
+.left-pane-hidden .browser {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-10px);
+  border-right-color: transparent;
+}
+.right-pane-hidden .outline {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(10px);
+  border-left-color: transparent;
+}
+.left-pane-hidden .splitter-left,
+.right-pane-hidden .splitter-right {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Draggable splitter between panes. Invisible by default; shows a soft
+   accent on hover/drag so the user knows it's interactive. */
+.splitter {
+  position: relative;
+  border: 0;
+  margin: 0;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 5;
+  transition: opacity 140ms ease;
+  /* Slight overlap with pane borders so the hit area extends a bit each way */
+}
+/* .splitter::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  background: linear-gradient(180deg, var(--paper), var(--paper-2) 80%);
+  pointer-events: none;
+} */
+.splitter::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  right: 2px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.splitter:hover::after {
+  opacity: 0.35;
+}
+.splitter:active::after {
+  opacity: 0.6;
+}
+.splitter:focus {
+  outline: none;
+}
+.splitter:focus-visible::after {
+  opacity: 0.6;
+}
+.splitter:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Forced-colors mode (Windows High Contrast, macOS Increase Contrast
+ * remap). Map the chrome to system color keywords so the OS owns the
+ * palette — our theme variables are ignored in this mode. Without
+ * this block the app collapses to a single grey wash. */
+@media (forced-colors: active) {
+  :root {
+    --paper: Canvas;
+    --paper-2: Canvas;
+    --paper-3: Canvas;
+    --ink: CanvasText;
+    --ink-2: CanvasText;
+    --ink-3: CanvasText;
+    --ink-4: GrayText;
+    --rule: CanvasText;
+    --rule-soft: GrayText;
+    --accent: Highlight;
+    --accent-fg: HighlightText;
+    --accent-soft: Canvas;
+  }
+  .skip-link,
+  button,
+  .tb-btn,
+  .tree-folder,
+  .document-row,
+  .ol-row,
+  .pane-tab,
+  .splitter,
+  .ctl-toggle,
+  .ctl-radio,
+  .ctl-theme-card {
+    border-color: ButtonText;
+    color: ButtonText;
+  }
+  /* Selected / pressed states — use Highlight+HighlightText so the
+   * OS-defined contrast pair handles legibility. */
+  [aria-selected="true"],
+  [aria-pressed="true"],
+  [aria-current="true"],
+  .document-row.active,
+  .ol-row.active,
+  .pane-tab.on,
+  .ctl-toggle.on,
+  .ctl-radio.on {
+    background: Highlight;
+    color: HighlightText;
+  }
+  /* Links should always announce as link-coloured, not chrome. */
+  a {
+    color: LinkText;
+  }
+  a:visited {
+    color: VisitedText;
+  }
+  /* Focus rings go through with full opacity in forced-colors. */
+  :focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}
+
+/* Global motion gate. Users with the OS preference set get every CSS
+ * transition / animation collapsed to ~instant. Smooth scrolling
+ * triggered from JS is gated separately via the prefersReducedMotion()
+ * helper. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
+    scroll-behavior: auto;
+  }
+}

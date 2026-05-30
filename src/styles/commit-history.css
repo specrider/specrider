@@ -1,0 +1,584 @@
+/* === Git cluster (branch chip; hosted in the title bar) === */
+.sb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sb-branch {
+  color: var(--ink-2);
+  gap: 4px;
+}
+.sb-branch svg {
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+.sb-branch-name {
+  font-family: "JetBrains Mono", "SF Mono", Menlo, ui-monospace, monospace;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  max-width: 28ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* === Commit history rail.
+   Full-repo graph with lane glyphs, branch labels, and plan-relevance
+   highlighting. The Unstaged row + toolbar live above a graph divider;
+   the graph rows below adopt a wider grid. === */
+.commit-history-rail {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  min-height: 0;
+  background: var(--paper-2);
+}
+.commit-review-tabs {
+  display: grid;
+}
+.commit-review-tabs-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.commit-review-tabs-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.commit-review-tabs .of-chip {
+  min-width: 0;
+  justify-content: center;
+  overflow: hidden;
+}
+.commit-review-tab-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ch-actions {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 8px 10px;
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--rule-soft);
+}
+.ch-action {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 64px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.ch-action-glyph {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink-3);
+  color: var(--ink-2);
+  font-size: 16px;
+  line-height: 1;
+  background: var(--paper);
+  transition:
+    background 0.1s ease,
+    border-color 0.1s ease,
+    color 0.1s ease;
+}
+.ch-action-label {
+  font-size: 11px;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+.ch-action:hover:not(:disabled) .ch-action-glyph {
+  background: var(--paper-3);
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.ch-action:hover:not(:disabled) .ch-action-label {
+  color: var(--ink);
+}
+.ch-action:disabled {
+  cursor: not-allowed;
+}
+.ch-action:disabled .ch-action-glyph {
+  opacity: 0.4;
+  border-color: var(--rule);
+}
+.ch-action:disabled .ch-action-label {
+  opacity: 0.5;
+}
+.ch-action-pull:not(:disabled) .ch-action-glyph {
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+.ch-action-push:not(:disabled) .ch-action-glyph {
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+.ch-action-fetch .ch-action-glyph {
+  border-style: dashed;
+}
+.ch-action-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 10px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.ch-graph-divider {
+  height: 1px;
+  background: var(--rule-soft);
+  margin: 0 6px;
+}
+.ch-unpushed-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  margin: 0 6px;
+  padding: 0;
+  box-sizing: border-box;
+  font:
+    600 10px / 1 -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    system-ui,
+    sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent-fg);
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    var(--accent-soft) 20%,
+    var(--accent-soft) 80%,
+    transparent 100%
+  );
+  border-radius: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.ch-row-graph.unpushed {
+  position: relative;
+}
+.ch-row-graph.unpushed::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+}
+.ch-unpushed-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--accent-soft);
+  color: var(--accent-fg);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  margin-right: 2px;
+}
+.ch-graph {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px 6px 8px;
+}
+.ch-graph-spacer {
+  position: relative;
+  width: 100%;
+}
+.ch-virtual-row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+.ch-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  text-align: left;
+  cursor: pointer;
+  font:
+    12px / 1.4 -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    system-ui,
+    sans-serif;
+  color: var(--ink);
+  width: 100%;
+}
+.ch-row-graph {
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  gap: 6px;
+  padding: 0 8px;
+  align-items: center;
+  /* Fixed row height so the SVG lane segments stitch together
+     seamlessly — any padding/line-height drift would break the
+     continuous-bar illusion that makes the graph readable. */
+  height: 24px;
+}
+/* Lanes-hidden variant — drop the lane column entirely so the row
+   reads as `[refs | subject | meta]`. Toggled via the
+   `Show commit graph lanes` setting. */
+.ch-row-graph.no-lanes {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+/* Plan-relevance — file-touch / branch / explicit get the strong
+   text color; unrelated commits recede so the relevant ones pop
+   without competing with branch labels for attention. */
+.ch-row-graph.ch-rel-none {
+  color: var(--ink-4);
+}
+.ch-row-graph.ch-rel-none .ch-subject {
+  color: var(--ink-4);
+}
+.ch-row-graph.ch-rel-file-touch .ch-subject {
+  color: var(--ink);
+  font-weight: 500;
+}
+.ch-row-graph.ch-rel-branch .ch-subject {
+  color: var(--ink);
+}
+.ch-row-graph.ch-rel-explicit .ch-subject {
+  color: var(--ink);
+  font-weight: 500;
+}
+/* Lane column — SVG that fills the row vertically so lane bars
+   stitch from row to row into continuous lines passing through every
+   commit dot. The component sets width/height inline from laneCount
+   and the row's pixel height. */
+.ch-lanes {
+  display: block;
+  flex-shrink: 0;
+}
+.ch-graph .ch-row-graph {
+  /* Drop the bottom-of-cell baseline gap so adjacent rows' lane
+     SVGs touch. Without this each lane would appear as broken
+     dashes instead of one continuous bar. */
+  gap: 6px;
+}
+/* Branch / tag labels per row. Tip-only — refsByCommit only carries
+   commits where a ref actually points. Single-line: the row's fixed
+   24px height can't accommodate wrapping, and overflowing chips just
+   get clipped at the container edge. */
+.ch-refs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+}
+.ch-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  font-size: 9.5px;
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--rule-soft);
+  background: var(--paper-3);
+  color: var(--ink-3);
+  white-space: nowrap;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Defensive: never let a chip blow past the row height and force
+     the SVG lanes to drift out of alignment. */
+  flex-shrink: 1;
+  min-width: 0;
+}
+.ch-ref-head {
+  background: var(--accent);
+  color: var(--paper);
+  border-color: var(--accent);
+}
+.ch-ref-default {
+  background: transparent;
+  color: var(--accent-fg);
+  border-color: var(--accent);
+}
+.ch-ref-tracked {
+  background: var(--accent-soft);
+  color: var(--accent-fg);
+  border-color: transparent;
+}
+.ch-ref-remote {
+  color: var(--ink-4);
+  font-style: italic;
+}
+.ch-ref-tag {
+  background: transparent;
+  color: var(--ink-4);
+  border-style: dashed;
+}
+.ch-ref-pinned {
+  background: var(--sage-soft);
+  color: var(--sage);
+  border-color: transparent;
+}
+.ch-ref-pin {
+  color: var(--sage);
+  font-size: 11px;
+  line-height: 1;
+}
+.ch-row:hover {
+  background: var(--paper-3);
+}
+.ch-row.selected {
+  background: var(--accent-soft);
+  color: var(--accent-fg);
+}
+.ch-row.selected .ch-meta,
+.ch-row.selected .ch-time,
+.ch-row.selected .ch-sha,
+.ch-row.selected .ch-author,
+.ch-row.selected .ch-subject {
+  color: var(--accent-fg);
+}
+/* Lane glyphs keep their per-lane hue even when the row is selected
+   so the graph layout stays readable. */
+.ch-row.selected .ch-lanes {
+  color: inherit;
+}
+.ch-row-graph.ch-rel-none.selected {
+  color: var(--accent-fg);
+}
+.ch-row-graph.ch-rel-none.selected .ch-subject {
+  color: var(--accent-fg);
+}
+.ch-row-unstaged {
+  background: var(--amber-soft);
+  color: var(--ink);
+  font-weight: 500;
+  margin: 0 6px 4px;
+  border-radius: 4px;
+}
+.ch-row-unstaged .ch-subject,
+.ch-row-unstaged .ch-meta {
+  color: var(--ink);
+}
+.ch-row-unstaged:hover {
+  background: color-mix(in oklab, var(--amber-soft) 88%, var(--ink) 12%);
+}
+.ch-row-unstaged.selected {
+  background: var(--amber);
+  color: var(--paper);
+}
+.ch-row-unstaged.selected .ch-subject,
+.ch-row-unstaged.selected .ch-meta {
+  color: var(--paper);
+  opacity: 0.9;
+}
+.ch-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  white-space: nowrap;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ch-badge-unstaged {
+  background: var(--amber);
+  color: var(--paper);
+  font-size: 8px;
+  padding: 1px 4px;
+}
+.ch-subject {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.ch-meta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--ink-3);
+  font-size: 11px;
+}
+.ch-author {
+  display: inline-block;
+  padding: 1px 4px;
+  background: var(--paper-3);
+  color: var(--ink-2);
+  border-radius: 2px;
+  font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.ch-time {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ch-sha {
+  font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  font-size: 10.5px;
+  color: var(--ink-4);
+}
+.ch-empty {
+  padding: 14px 12px;
+  color: var(--ink-3);
+  font:
+    12px / 1.5 -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    system-ui,
+    sans-serif;
+}
+.ch-empty-setup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 20px 18px;
+  max-width: 280px;
+}
+.ch-empty-title {
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.ch-empty-copy {
+  color: var(--ink-4);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+.ch-clean {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--rule-soft);
+  color: var(--ink-4);
+  font:
+    11.5px / 1.4 -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    system-ui,
+    sans-serif;
+  font-style: italic;
+}
+.ch-empty-hint {
+  margin-top: 6px;
+  color: var(--ink-4);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.ch-empty-hint code {
+  font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  font-size: 10.5px;
+  background: var(--paper-3);
+  padding: 0 4px;
+  border-radius: 2px;
+}
+.ch-empty-action {
+  margin-top: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 30px;
+  padding: 6px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  background: var(--paper-3);
+  color: var(--ink);
+  font: 600 12px / 1.2 var(--font-sans);
+  cursor: pointer;
+}
+.ch-empty-action:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-fg);
+  background: var(--paper);
+}
+.ch-empty-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.ch-empty-action svg {
+  flex: 0 0 auto;
+}
+.ch-empty-error {
+  color: var(--rose);
+}
+.ch-error {
+  color: var(--rose);
+}
+
+/* Scrollbar styling — tracks the theme via CSS variables.
+   The 2px transparent border is "padding" around the visible thumb;
+   `background-clip: content-box` keeps the visible color inside the
+   border so the bar reads thinner than the track. */
+/* Scrollbars are functional UI, not decoration — thumb sits at
+ * --ink-3 (≥3:1 against --paper across the catalog) so it stays
+ * visible under squinty conditions. */
+* {
+  scrollbar-color: var(--ink-3) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ink-3);
+  background-clip: content-box;
+  border: 2px solid transparent;
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-2);
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:active {
+  background: var(--ink);
+  background-clip: content-box;
+}

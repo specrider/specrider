@@ -1,0 +1,4 @@
+# Tauri's dev watcher reads this in addition to .gitignore. Without
+# the entry below, Finder browsing icons/ creates a .DS_Store and
+# Tauri rebuilds the Rust binary.
+**/.DS_Store

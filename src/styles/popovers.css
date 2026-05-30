@@ -1,0 +1,386 @@
+/* === Commit popover (per-line blame → commit details) === */
+.commit-popover {
+  position: fixed;
+  z-index: 50;
+  width: 460px;
+  max-width: calc(100vw - 16px);
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow:
+    0 12px 32px oklch(0% 0 0 / 0.16),
+    0 2px 6px oklch(0% 0 0 / 0.08);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  overflow: hidden;
+}
+.commit-popover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--rule-soft);
+  cursor: grab;
+  user-select: none;
+}
+.commit-popover-head:active {
+  cursor: grabbing;
+}
+.commit-popover-sha {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-2);
+  letter-spacing: 0.02em;
+}
+.commit-popover-close {
+  background: transparent;
+  border: none;
+  color: var(--ink-3);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.commit-popover-close:hover {
+  color: var(--ink);
+}
+.commit-popover-body {
+  overflow: auto;
+  padding: 10px 12px;
+  flex: 1;
+}
+.commit-popover-loading,
+.commit-popover-error {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.commit-popover-error {
+  color: var(--rose);
+}
+.commit-popover-subject {
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+.commit-popover-byline {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  margin-bottom: 10px;
+}
+.commit-popover-bodytext {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-2);
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  background: var(--paper-2);
+  border-radius: 4px;
+  max-height: 200px;
+  overflow: auto;
+}
+.commit-popover-files {
+  font-size: 11.5px;
+  margin-top: 4px;
+}
+.commit-popover-section-title {
+  color: var(--ink-3);
+  font-weight: 600;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 10px;
+}
+.commit-popover-files ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  color: var(--ink-2);
+}
+.commit-popover-files li {
+  padding: 1px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.commit-popover-files-more {
+  color: var(--ink-3);
+  font-style: italic;
+}
+.commit-popover-actions {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--rule-soft);
+  background: var(--paper-2);
+}
+.commit-popover-actions button {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.commit-popover-actions button:hover {
+  background: var(--paper-3);
+}
+
+/* === Context menu (plan-row right-click) === */
+.context-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 200px;
+  padding: 4px 0;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow:
+    0 12px 32px oklch(0% 0 0 / 0.16),
+    0 2px 6px oklch(0% 0 0 / 0.08);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--ink);
+  user-select: none;
+}
+.context-menu-divider {
+  height: 1px;
+  border: 0;
+  background: var(--rule-soft);
+  margin: 4px 0;
+}
+.context-menu-item {
+  position: relative;
+  width: 100%;
+  border: 0;
+  padding: 6px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.context-menu-item:hover,
+.context-menu-item.active {
+  background: var(--paper-2);
+}
+.context-menu-item:focus {
+  outline: none;
+}
+.context-menu-item.disabled {
+  color: var(--ink-4);
+  cursor: default;
+}
+.context-menu-item.disabled:hover,
+.context-menu-item.disabled.active {
+  background: transparent;
+}
+.context-menu-item.danger {
+  color: var(--rose);
+}
+.context-menu-item.danger:hover,
+.context-menu-item.danger.active {
+  background: var(--rose-soft);
+}
+.context-menu-label {
+  flex: 1;
+}
+.context-menu-chevron {
+  color: var(--ink-3);
+  font-size: 14px;
+  line-height: 1;
+}
+.context-menu-submenu {
+  position: absolute;
+  left: 100%;
+  top: -4px;
+  margin-left: -2px;
+  min-width: 180px;
+  padding: 4px 0;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow:
+    0 12px 32px oklch(0% 0 0 / 0.16),
+    0 2px 6px oklch(0% 0 0 / 0.08);
+}
+
+/* === Diff popover === */
+.diff-popover {
+  position: fixed;
+  z-index: 50;
+  min-width: 360px;
+  max-width: 520px;
+  max-height: 360px;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow:
+    0 12px 32px oklch(0% 0 0 / 0.16),
+    0 2px 6px oklch(0% 0 0 / 0.08);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  overflow: hidden;
+}
+.diff-popover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--rule-soft);
+  cursor: grab;
+  user-select: none;
+}
+.diff-popover-head:active {
+  cursor: grabbing;
+}
+.diff-popover-meta {
+  color: var(--ink-3);
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+}
+.diff-popover-close {
+  background: transparent;
+  border: none;
+  color: var(--ink-3);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.diff-popover-close:hover {
+  color: var(--ink);
+}
+.diff-popover-body {
+  overflow: auto;
+  padding: 4px 0;
+}
+.diff-line {
+  display: flex;
+  gap: 8px;
+  padding: 1px 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.diff-line.added {
+  background: var(--sage-soft);
+  color: var(--ink);
+}
+.diff-line.added .diff-sigil {
+  color: var(--sage);
+}
+.diff-line.removed {
+  background: var(--rose-soft);
+  color: var(--ink);
+}
+.diff-line.removed .diff-sigil {
+  color: var(--rose);
+}
+.diff-sigil {
+  flex-shrink: 0;
+  width: 12px;
+  text-align: center;
+  font-weight: 600;
+}
+.diff-text {
+  flex: 1;
+}
+
+.pr-rename-input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--accent, var(--rule));
+  border-radius: 4px;
+  padding: 2px 6px;
+  outline: none;
+}
+.pr-rename-input.has-error {
+  border-color: var(--rose);
+}
+.pr-rename-error {
+  display: block;
+  font-size: 10.5px;
+  color: var(--rose);
+  margin-top: 2px;
+}
+
+.pr-change-chip {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 4px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--amber);
+  background: var(--amber-soft);
+  border-radius: 3px;
+  vertical-align: 1px;
+  letter-spacing: 0.02em;
+}
+
+.document-row .pr-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  font-size: 10.5px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.pr-meta-sep {
+  color: var(--ink-4);
+}
+.pr-progress {
+  flex: 1;
+  height: 3px;
+  background: var(--paper-3);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-left: 4px;
+  max-width: 60px;
+}
+.pr-progress-bar {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pr-progress-bar {
+    transition: none;
+  }
+}
+.document-row.bucket-archive .pr-progress-bar {
+  background: var(--sage);
+}
+.document-row.bucket-upcoming .pr-progress-bar {
+  background: var(--amber);
+}
+.document-row.bucket-backlog .pr-progress-bar {
+  background: var(--ink-3);
+}

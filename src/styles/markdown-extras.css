@@ -1,0 +1,217 @@
+/* === CodeMirror conflict-block decorations === */
+.cm-conflict-ours {
+  background: color-mix(in oklch, var(--sage-soft) 60%, transparent);
+  border-left: 3px solid var(--sage);
+}
+.cm-conflict-theirs {
+  background: color-mix(in oklch, var(--accent-soft) 60%, transparent);
+  border-left: 3px solid var(--accent);
+}
+.cm-conflict-marker {
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+  background: var(--paper-2);
+}
+.cm-conflict-actions {
+  display: inline-flex;
+  gap: 4px;
+  padding: 2px 6px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--ink-2);
+  margin-left: 8px;
+}
+.cm-conflict-actions button {
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 1px 6px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--ink-2);
+}
+.cm-conflict-actions button:hover {
+  background: var(--paper-3);
+  color: var(--ink);
+}
+
+/* === Markdown elements: images / mermaid / math / footnotes === */
+
+.document .md-raw-html {
+  max-width: 100%;
+}
+.document .md-raw-html img {
+  max-width: 100%;
+  height: auto;
+}
+
+.document .md-image-figure {
+  margin: 16px 0;
+  text-align: center;
+}
+.document .md-image-figure img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.document .md-image-inline {
+  max-width: 100%;
+  height: auto;
+  vertical-align: middle;
+  border-radius: 2px;
+}
+.document .img-broken {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  color: var(--rose, #c0392b);
+  background: var(--paper-2);
+  border: 1px dashed var(--rule);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.document .link-blocked {
+  text-decoration: line-through;
+  color: var(--ink-3, var(--ink-2));
+  cursor: not-allowed;
+}
+
+/* External-image placeholder shown in untrusted workspaces in lieu
+ * of the actual <img>. Clicking loads the single image; right-click
+ * reveals the trust-workspace shortcut. */
+.document .img-remote-placeholder {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  color: var(--ink-2);
+  background: var(--paper-2);
+  border: 1px dashed var(--rule);
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+  text-decoration: none;
+}
+.document .img-remote-placeholder:not(.inline) {
+  display: block;
+  margin: 12px 0;
+  text-align: center;
+}
+.document .img-remote-placeholder:hover,
+.document .img-remote-placeholder:focus-visible {
+  background: var(--rule-soft);
+  outline: none;
+}
+
+.document .mermaid {
+  margin: 16px 0;
+  display: flex;
+  justify-content: center;
+}
+.document .mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+.document .mermaid-loading {
+  height: 80px;
+  margin: 16px 0;
+  background: linear-gradient(
+    90deg,
+    var(--paper-2) 0%,
+    var(--paper-3) 50%,
+    var(--paper-2) 100%
+  );
+  background-size: 200% 100%;
+  animation: mermaid-pulse 1.4s linear infinite;
+  border-radius: 4px;
+}
+@keyframes mermaid-pulse {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+.document .mermaid-error {
+  margin: 16px 0;
+  padding: 10px;
+  border: 1px solid var(--rose, #c0392b);
+  border-radius: 4px;
+  background: var(--paper-2);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  white-space: pre-wrap;
+}
+.document .mermaid-error-msg {
+  display: block;
+  margin-top: 6px;
+  color: var(--rose, #c0392b);
+}
+
+.document .math {
+  color: inherit;
+}
+.document .math.math-display {
+  display: block;
+  margin: 16px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.document .math.math-inline {
+  white-space: nowrap;
+}
+.document .math .katex-error {
+  color: var(--rose, #c0392b);
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+}
+
+.document .footnote-ref {
+  font-size: 0.7em;
+  vertical-align: super;
+  line-height: 0;
+}
+.document .footnote-ref a {
+  text-decoration: none;
+  padding: 0 2px;
+}
+.document .footnotes {
+  margin-top: 32px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule-soft, var(--rule));
+  font-size: 0.92em;
+  color: var(--ink-2);
+}
+.document .footnotes ol {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+.document .footnotes li {
+  position: relative;
+  margin: 6px 0;
+  padding-left: 28px;
+  scroll-margin-top: 80px;
+}
+.document .footnotes .footnote-ord {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  color: var(--ink-3, var(--ink-2));
+}
+.document .footnotes .footnote-back {
+  margin-left: 6px;
+  text-decoration: none;
+  color: var(--ink-3, var(--ink-2));
+}
+.document .footnote-target-flash {
+  background: var(--accent-soft, rgba(127, 127, 127, 0.18));
+  transition: background 0.6s ease-out;
+}

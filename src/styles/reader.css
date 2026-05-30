@@ -1,0 +1,1419 @@
+/* === Reader (center) === */
+.reader {
+  /* A whisker warmer / more saturated than --paper so the reading
+     surface has subtle presence against the chrome but doesn't drift
+     into the side-pane tone (--paper-2). Theme-aware via --reader-bg. */
+  background: var(--reader-bg);
+  container: reader-pane / inline-size;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.reader-empty-body {
+  flex: 1;
+  min-height: 0;
+}
+
+.reader-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 47px;
+  box-sizing: border-box;
+  padding: 0 14px 0 10px;
+  border-bottom: 1px solid var(--rule-soft);
+  background: linear-gradient(180deg, var(--paper), var(--paper-2) 80%);
+  flex: 0 0 auto;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.reader-head * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.reader-frontmatter-issues {
+  flex: 0 0 auto;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 12px;
+  border-bottom: 1px solid
+    color-mix(in oklch, var(--amber) 34%, var(--rule-soft));
+  background: color-mix(in oklch, var(--amber-soft) 68%, var(--paper) 32%);
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: calc(var(--ui-size, 13px) * 0.9);
+  line-height: 1.35;
+  overflow: hidden;
+}
+.reader-frontmatter-issues svg {
+  flex: 0 0 auto;
+  color: var(--amber);
+}
+.reader-frontmatter-issues-label {
+  flex: 0 0 auto;
+  color: var(--ink);
+  font-weight: 600;
+}
+.reader-frontmatter-issues-field {
+  min-width: 0;
+  max-width: min(34ch, 38%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 1px 5px;
+  border: 1px solid color-mix(in oklch, var(--amber) 26%, var(--rule-soft));
+  border-radius: 4px;
+  background: color-mix(in oklch, var(--paper) 72%, var(--amber-soft) 28%);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: calc(var(--ui-size, 13px) * 0.82);
+}
+.reader-frontmatter-issues-message {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reader-frontmatter-issues-count {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 1px 6px;
+  border: 1px solid color-mix(in oklch, var(--amber) 28%, var(--rule-soft));
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink-2);
+  font-size: calc(var(--ui-size, 13px) * 0.8);
+  font-variant-numeric: tabular-nums;
+}
+
+@container reader-pane (max-width: 560px) {
+  .reader-frontmatter-issues {
+    gap: 6px;
+    padding-inline: 10px;
+  }
+
+  .reader-frontmatter-issues-label {
+    display: none;
+  }
+
+  .reader-frontmatter-issues-field {
+    max-width: 46%;
+  }
+}
+
+.rh-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 99px;
+  font-size: calc(var(--ui-size, 13px) * 0.85);
+  font-weight: 500;
+  /* background: var(--accent-soft); */
+  color: var(--accent-fg);
+  border: 1px solid var(--accent-soft);
+}
+.rh-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: calc(var(--ui-size, 13px) * 0.85);
+  color: var(--ink-3);
+}
+.rh-path .seg {
+  color: var(--ink-4);
+}
+.rh-path .seg-end {
+  color: var(--ink-2);
+}
+.rh-spacer {
+  flex: 1;
+}
+.rh-readtime {
+  font-size: calc(var(--ui-size, 13px) * 0.85);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Wrapper for the editor + preview pair. CSS grid; SplitView sets
+   gridTemplateColumns inline based on mode (and ratio in split). In
+   non-split modes the inactive child is display:none so the active
+   child fills 100%. */
+.reader-content {
+  flex: 1;
+  display: grid;
+  min-height: 0;
+  min-width: 0;
+}
+.reader-content.mode-read > .reader-edit-host {
+  display: none;
+}
+.reader-content.mode-edit > .reader-scroll {
+  display: none;
+}
+
+.reader-scroll {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+.reader-edit-host {
+  min-width: 0;
+  min-height: 0;
+  /* Position context for the absolutely-positioned editor below.
+     Grid items default to min-width: auto and CodeMirror's
+     `.cm-content` is sized to its longest line, so a row-flex
+     parent gets stretched to content width. Absolute-positioning
+     the editor inside a known-size host is the only reliable way
+     to make CodeMirror's own `.cm-scroller` (overflow: auto)
+     handle horizontal scrolling instead of letting the editor
+     overflow into the next grid column. */
+  position: relative;
+  overflow: hidden;
+}
+.reader-edit-host > .md-editor {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* Without these, CodeMirror's `.cm-scroller` sizes to its longest
+   line (the content forces the column wider) and there's nothing
+   to scroll inside — soft-wrap-off content just gets clipped by
+   the host's `overflow: hidden`. Pinning the chain to the host's
+   width lets `.cm-scroller`'s own overflow:auto provide a
+   horizontal scrollbar. */
+.reader-edit-host .cm-editor {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+.reader-edit-host .cm-scroller {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* In split mode the preview column is much narrower than the
+   720px-centered single-column read mode. Drop the cap so line
+   length matches the column instead of leaving the right half empty. */
+.reader-content.mode-split > .reader-scroll .document {
+  max-width: none;
+  padding-left: 28px;
+  padding-right: 28px;
+}
+
+/* Draggable divider between the editor and preview in split mode.
+   Same hit-area pattern as the main pane splitters but a touch
+   shorter and dimmer so it doesn't visually compete. */
+.reader-splitter {
+  position: relative;
+  margin: 0;
+  cursor: col-resize;
+  background: transparent;
+  border-left: 1px solid var(--rule-soft);
+  border-right: 1px solid var(--rule-soft);
+  z-index: 4;
+}
+.reader-splitter::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 2px;
+  right: 2px;
+  background: var(--accent);
+  opacity: 0;
+  border-radius: 2px;
+  transition: opacity 0.12s;
+}
+.reader-splitter:hover::after {
+  opacity: 0.25;
+}
+.reader-splitter:active::after {
+  opacity: 0.5;
+}
+
+.document {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 32px 200px;
+  /* Exposed for descendants that want to escape this padding (eg.
+     .table-overflow uses it to break out of the doc's measure). */
+  --doc-pad-x: 32px;
+  font-family: var(--font-serif);
+  font-size: var(--body-size, 17px);
+  line-height: var(--line-height, 1.65);
+  color: var(--ink);
+  /* Typographic defaults for body prose. Headings opt back out of
+     hyphens/ligatures where appropriate. The toggles in body.no-*
+     classes (driven by Settings → Typography) override these. */
+  font-feature-settings: "kern", "liga", "calt";
+  font-variant-numeric: oldstyle-nums proportional-nums;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  hyphenate-limit-chars: 6 3 3;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.document * {
+  -webkit-user-select: text;
+  user-select: text;
+}
+.document p,
+.document li,
+.document blockquote {
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+
+/* Read-mode change markers — a thin colored bar in the left margin
+   of any block whose source range overlaps the unstaged diff. */
+.document .changed-block {
+  position: relative;
+  cursor: pointer;
+}
+.document .changed-block::before {
+  content: "";
+  position: absolute;
+  left: -16px;
+  top: 2px;
+  bottom: 2px;
+  width: 3px;
+  border-radius: 2px;
+  pointer-events: none;
+}
+/* List items sit inside their parent <ul>/<ol>'s padding-left, so the
+   default -16px puts the bar right on top of the bullet/number marker.
+   Push the bar further left to land in the document's left margin
+   instead. (ul has padding-left 22px; <ol> uses the browser default,
+   ~40px — over-shoot is fine since the bar is clipped to .document
+   overflow.) */
+.document ul:not(.tasks) > li.changed-block::before,
+.document ul:not(.tasks) > li.changed-block::after {
+  left: -38px;
+}
+.document ol > li.changed-block::before,
+.document ol > li.changed-block::after {
+  left: -56px;
+}
+/* Task rows' chevrons live at -18px from the head, so the default
+   -16px puts the change bar right on top of the arrow. Push the bar
+   further left so the gutter reads as two separate columns. */
+.document .tasks > li.changed-block::before,
+.document .tasks > li.changed-block::after {
+  left: -30px;
+}
+.document .changed-block.changed-added::before {
+  background: var(--sage);
+}
+.document .changed-block.changed-modified::before {
+  background: var(--amber);
+}
+.document .changed-block.changed-deleted-near::before {
+  background: var(--rose);
+}
+
+/* Foldable headings (h1–h3): a chevron in the left margin that fades
+   in on hover and persists when collapsed. The whole heading is the
+   click target, so cursor: pointer reads as "this does something." */
+.document .heading-foldable {
+  position: relative;
+}
+.document .heading-fold-btn {
+  position: absolute;
+  left: -28px;
+  top: 50%;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  color: var(--ink-4);
+  transform: translateY(-50%);
+}
+.document .heading-fold-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+.document .heading-fold-btn .heading-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  opacity: 0;
+  transform: rotate(90deg);
+  transition:
+    opacity 0.12s,
+    transform 0.12s,
+    color 0.08s;
+  user-select: none;
+}
+.document .heading-foldable:hover .heading-fold-btn .heading-chevron,
+.document .heading-fold-btn:hover .heading-chevron,
+.document .heading-fold-btn:focus-visible .heading-chevron {
+  opacity: 1;
+  color: var(--ink-2);
+}
+.document .heading-foldable.collapsed .heading-fold-btn .heading-chevron {
+  opacity: 1;
+  color: var(--ink-2);
+  transform: rotate(0deg);
+}
+.document .heading-foldable.collapsed {
+  /* Subtle hint that the section continues below the collapsed heading */
+  opacity: 0.85;
+}
+/* Density modifier — applied to <body>. Affects vertical rhythm in the
+   reader AND padding in the chrome (plans browser, outline, status bar)
+   so the toggle has a perceptible effect across the app. */
+body.density-dense .document p {
+  margin-bottom: 10px;
+}
+body.density-dense .document h2 {
+  margin-top: 24px;
+}
+body.density-dense .document h3 {
+  margin-top: 18px;
+}
+body.density-dense .document .tasks {
+  margin-bottom: 16px;
+}
+
+/* Plans browser tree — tighten/loosen row height. */
+body.density-dense .tree-folder {
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+body.density-dense .document-row {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+body.density-comfortable .tree-folder {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+body.density-comfortable .document-row {
+  padding-top: 10px;
+  padding-bottom: 11px;
+}
+
+/* Outline rows. */
+body.density-dense .ol-row {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+body.density-dense .ol-task-row {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+body.density-comfortable .ol-row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+body.density-comfortable .ol-task-row {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+/* App grid — title bar height. The .app rule sets 38px by default;
+   densify or pad in dense/comfortable modes. */
+body.density-dense .app:not(.empty) {
+  grid-template-rows: 32px 1fr;
+}
+body.density-comfortable .app:not(.empty) {
+  grid-template-rows: 42px 1fr;
+}
+
+/* Top-of-pane bars (Documents tab, reader path bar, outline/commits
+   tabs, terminal/diff explorer headers) — shrink in dense mode so the
+   density setting has visible effect on the chrome, not just the body. */
+body.density-dense .pane-tab-head,
+body.density-dense .reader-head,
+body.density-dense .terminal-pane-header,
+body.density-dense .diff-explorer-header {
+  height: 38px;
+}
+
+.doc-frontmatter {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 8px 18px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  padding: 16px 18px;
+  margin: 0 0 40px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+}
+.doc-frontmatter dt {
+  color: var(--ink-3);
+  font-weight: 500;
+}
+.doc-frontmatter dd {
+  margin: 0;
+  color: var(--ink);
+}
+.doc-frontmatter .tag {
+  display: inline-block;
+  background: var(--paper-3);
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-right: 4px;
+  color: var(--ink-2);
+  font-size: 10.5px;
+}
+.fm-links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.fm-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.fm-link-branch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.fm-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.fm-status .ds {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.document h1 {
+  font-family: var(--font-serif);
+  font-size: 2.375em;
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 20px;
+  color: var(--ink);
+  font-variation-settings: "opsz" 60;
+  text-wrap: balance;
+  hyphens: manual;
+  -webkit-hyphens: manual;
+}
+.document h2 {
+  font-family: var(--font-serif);
+  font-size: 1.625em;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 30px 0 10px;
+  color: var(--ink);
+  position: relative;
+  font-variation-settings: "opsz" 36;
+  text-wrap: balance;
+  hyphens: manual;
+  -webkit-hyphens: manual;
+}
+.document h3 {
+  font-family: var(--font-serif);
+  font-size: 1.1875em;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  margin: 24px 0 8px;
+  color: var(--ink);
+  font-variation-settings: "opsz" 24;
+  text-wrap: balance;
+  hyphens: manual;
+  -webkit-hyphens: manual;
+}
+.document .lede {
+  font-family: var(--font-serif);
+  font-size: 1.1875em;
+  line-height: 1.55;
+  color: var(--ink-2);
+  margin: 0 0 24px;
+  font-style: italic;
+  font-variation-settings: "opsz" 24;
+}
+.document p {
+  margin: 0 0 16px;
+  text-wrap: pretty;
+  hanging-punctuation: first;
+}
+
+.document a {
+  color: var(--accent-fg);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklch, var(--accent) 50%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition:
+    color 0.08s,
+    text-decoration-color 0.08s;
+}
+.document a:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+.document a:visited {
+  color: var(--accent-fg);
+}
+/* Inline code inside a link keeps the chip styling but adopts the
+   link's accent so the connection reads. */
+.document a code {
+  color: var(--accent-fg);
+  border-color: color-mix(in oklch, var(--accent) 30%, var(--rule-soft));
+}
+.document a:hover code {
+  color: var(--accent);
+}
+.document .callout {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 12px;
+  padding: 14px 16px;
+  margin: 20px 0 24px;
+  border-radius: 8px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule-soft);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.document .callout.note {
+  background: var(--callout-note-bg);
+  border-color: var(--callout-note-border);
+}
+.document .callout.important {
+  background: var(--callout-imp-bg);
+  border-color: var(--callout-imp-border);
+}
+.callout-icon {
+  color: var(--accent);
+  margin-top: 1px;
+}
+.callout.important .callout-icon {
+  color: oklch(0.55 0.13 60);
+}
+.callout-title {
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 2px;
+  font-size: 13px;
+}
+.callout-text {
+  color: var(--ink-2);
+}
+
+.document .tasks {
+  list-style: none;
+  margin: 4px 0 24px;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: 14.5px;
+}
+.task-row {
+  display: block;
+  position: relative;
+  border-radius: 5px;
+}
+.task-row-head {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  gap: 10px;
+  align-items: start;
+  padding: 6px 8px 6px 6px;
+  border-radius: 5px;
+  cursor: pointer;
+  position: relative;
+}
+.task-row a,
+.task-row a * {
+  cursor: pointer;
+}
+.task-row-head:hover {
+  background: var(--paper-2);
+}
+/* Disclosure chevron: matches heading-chevron — sits in the left
+ *  gutter, hidden until hover (or persisted while the row is
+ *  collapsed). Same `▾` glyph and rotation behavior as headings.
+ *  Anchored to the head row so vertical centering tracks the checkbox
+ *  even when the row contains a nested task list below. */
+.task-row-head > .task-chevron {
+  position: absolute;
+  /* Anchored to the checkbox center: head padding-top (6) + check
+   *  margin-top (3) + half of check height (8) = 17px. */
+  top: 17px;
+  left: -20px;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink-4);
+  opacity: 0;
+  cursor: pointer;
+  transform: translateY(-50%) rotate(90deg);
+  transition:
+    opacity 0.12s,
+    transform 0.12s,
+    color 0.08s;
+  user-select: none;
+}
+.task-row.has-children:hover > .task-row-head > .task-chevron {
+  opacity: 1;
+  color: var(--ink-2);
+}
+.task-row.has-children.collapsed > .task-row-head > .task-chevron {
+  opacity: 1;
+  color: var(--ink-2);
+  transform: translateY(-50%) rotate(0deg);
+}
+.task-row.has-children > .task-row-head > .task-chevron:hover {
+  color: var(--ink);
+  opacity: 1;
+}
+/* During a drag the original row dims out so the user reads the drop
+ *  indicator as the live position. The body class kills hover styles
+ *  on every other row so they don't flicker as the cursor passes. */
+.task-row.dragging {
+  opacity: 0.4;
+}
+body.task-dragging {
+  cursor: grabbing;
+}
+body.task-dragging .task-row-head:hover {
+  background: transparent;
+}
+.task-drop-indicator {
+  position: fixed;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 0 0 1px var(--paper);
+}
+.task-drop-indicator::before {
+  content: "";
+  position: absolute;
+  left: -3px;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+/* Translucent floating clone of the dragged row's header. The clone
+ *  inherits all the row's existing styling (checkbox, text, etc.); we
+ *  hide the chevron + grip + line marker since they're affordances on
+ *  the source row, not part of the carried payload. */
+.task-drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 10000;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
+  padding-right: 14px;
+  opacity: 0.92;
+  font-family: var(--font-sans);
+  cursor: grabbing;
+}
+.task-drag-ghost .task-chevron,
+.task-drag-ghost .task-line {
+  display: none;
+}
+.task-bullet {
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  touch-action: none;
+}
+.task-bullet:active {
+  cursor: grabbing;
+}
+.task-bullet::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ink-4);
+}
+.task-row-children {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-2px);
+  visibility: hidden;
+  pointer-events: none;
+  /* Hint WebKit to keep grid-row layout flexible; without this, the
+   * 0fr→1fr animation can cache a stale row size on first paint and
+   * leaves a gap until something forces a reflow (window resize,
+   * dev-tools open, etc.). */
+  will-change: grid-template-rows;
+  transition:
+    grid-template-rows 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 140ms ease,
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s linear 180ms;
+}
+.task-row-children.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    grid-template-rows 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 140ms ease,
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s;
+}
+.task-row-children-inner {
+  min-height: 0;
+  /* `overflow: hidden` is needed during the 0fr⇄1fr grid animation so
+   *  collapsed children don't bleed out of their zero-height row. We
+   *  swap it back to visible only AFTER the open animation finishes,
+   *  so nested rows' gutter affordances (drag grip, chevron) aren't
+   *  clipped at the inner's left edge. The transition delay is matched
+   *  to the parent's grid-template-rows duration. */
+  overflow: hidden;
+  transition: overflow 0s linear 0s;
+}
+.task-row-children.open > .task-row-children-inner {
+  overflow: visible;
+  transition-delay: 180ms;
+}
+.document .tasks.nested {
+  margin: 0;
+  /* Indent under the parent's checkbox column (caret 14 + gap 10 + check
+     18 = ~38px to align with the parent's text column, then pull back
+     a bit so the nested caret/check sit under the parent's check). */
+  padding-left: 24px;
+  font-size: inherit;
+}
+@keyframes taskFlash {
+  0% {
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  100% {
+    background: transparent;
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+.task-row.flash,
+.document li.flash,
+.document h1.flash,
+.document h2.flash,
+.document h3.flash {
+  /* Color flash + 2px outline ring so CVD users see the target even
+   * when the accent-soft tint is hard to distinguish from --paper. */
+  animation: taskFlash 700ms ease-out;
+  border-radius: 4px;
+}
+.task-check {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1.5px solid var(--ink-4);
+  border-radius: 4px;
+  margin-top: 3px;
+  flex-shrink: 0;
+  background: var(--paper);
+  cursor: pointer;
+  touch-action: none;
+  transition: all 0.1s;
+}
+.task-check.done {
+  background: var(--sage);
+  border-color: var(--sage);
+}
+.task-check.done::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 7px;
+  height: 3.5px;
+  border-left: 1.5px solid var(--paper);
+  border-bottom: 1.5px solid var(--paper);
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+.task-text {
+  color: var(--ink);
+  line-height: 1.5;
+}
+/* Restrict to the parent's own head — without `>` the rule cascades
+   into nested `.task-row` descendants and crosses out unchecked
+   children of a checked parent. */
+.task-row.done > .task-row-head > .task-text {
+  color: var(--ink-3);
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-4);
+}
+.task-line {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-4);
+  padding-top: 5px;
+  display: none;
+}
+/* Only useful as a jump target when the editor is visible side-by-side. */
+.document.mode-split .task-line {
+  display: inline;
+}
+
+/* Inline code — anywhere in the document, including task list items
+   and tables. Code blocks (`.document pre code`) opt back out below
+   so they keep their pre-level styling. */
+.document code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--paper-3);
+  color: var(--ink-2);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--rule-soft);
+  white-space: nowrap;
+  /* Mono punctuation should stay literal by default; programmer-font
+     ligatures (==, =>, !=, etc.) are opt-in via the body class. */
+  font-feature-settings:
+    "liga" 0,
+    "calt" 0,
+    "zero" 1;
+  font-variant-ligatures: none;
+  font-variant-numeric: normal;
+}
+.task-row code {
+  font-size: 0.92em;
+}
+.document pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+  font-size: inherit;
+  white-space: pre;
+}
+
+.document pre {
+  background: var(--paper-2);
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  padding: 16px 18px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.65;
+  overflow-x: auto;
+  margin: 16px 0 24px;
+  position: relative;
+  font-feature-settings:
+    "liga" 0,
+    "calt" 0,
+    "zero" 1;
+  font-variant-ligatures: none;
+  font-variant-numeric: normal;
+}
+.code-lang {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-4);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+/* Shiki dual-theme tokens. Each span carries --shiki-light/--shiki-dark
+   custom props; we pick which one to read based on the body theme class. */
+.document pre code.shiki-tokens span {
+  color: var(--shiki-light);
+}
+body.theme-dark .document pre code.shiki-tokens span {
+  color: var(--shiki-dark);
+}
+
+/* Tables stay within the document's normal text measure. Tables wider
+   than the column scroll horizontally inside the wrapper rather than
+   bleeding into the gutter or blowing up the page. The wrapper is a
+   positioned ancestor for the expand-to-viewer button. */
+.document .table-overflow {
+  position: relative;
+  display: block;
+  margin: 12px 0 24px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--rule-soft);
+  border-radius: 6px;
+  background: var(--paper);
+}
+
+.document table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  width: 100%;
+}
+.document th,
+.document td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.document tbody tr:last-child td {
+  border-bottom: none;
+}
+.document th {
+  position: relative;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--rule);
+  cursor: pointer;
+  user-select: none;
+}
+.document th:hover {
+  color: var(--ink-2);
+}
+.document th.sorted {
+  color: var(--ink);
+}
+
+.document .th-sort-btn {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+.document .th-sort-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.document .th-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.document .th-sort {
+  font-size: 0.85em;
+  color: var(--ink-4);
+  opacity: 0.45;
+  transition:
+    opacity 0.08s,
+    color 0.08s;
+}
+.document th:hover .th-sort {
+  opacity: 0.85;
+}
+.document th.sorted .th-sort {
+  opacity: 1;
+  color: var(--ink-2);
+}
+
+.document tr td:last-child {
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+
+/* Floating "open in viewer" button in the top-right of every table.
+   Quiet by default; brightens on hover of the wrapper. */
+.document .table-expand-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+  border: 1px solid var(--rule-soft);
+  border-radius: 5px;
+  color: var(--ink-3);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.12s,
+    color 0.08s,
+    background 0.08s,
+    border-color 0.08s;
+  z-index: 2;
+}
+.document .table-overflow:hover .table-expand-btn,
+.document .table-expand-btn:focus-visible {
+  opacity: 1;
+}
+.document .table-expand-btn:hover {
+  color: var(--ink);
+  background: var(--paper-3);
+  border-color: var(--rule);
+}
+
+/* Table viewer modal — floating, draggable, resizable. Non-blocking:
+   no backdrop, so the user can keep scrolling the doc behind it. */
+.table-modal {
+  position: fixed;
+  z-index: 1200;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.18),
+    0 2px 6px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  min-width: 360px;
+  min-height: 240px;
+  overflow: hidden;
+}
+.table-modal-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 6px 0 12px;
+  background: linear-gradient(180deg, var(--paper), var(--paper-2));
+  border-bottom: 1px solid var(--rule-soft);
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+}
+.table-modal-head:active {
+  cursor: grabbing;
+}
+.table-modal-title {
+  flex: 1;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+  letter-spacing: 0.01em;
+}
+.table-modal-head-extras {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 4px;
+}
+.table-modal-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 12px;
+  color: var(--ink-2);
+  cursor: pointer;
+  user-select: none;
+}
+.table-modal-toggle input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+.table-modal-close {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition:
+    background 0.08s,
+    color 0.08s,
+    border-color 0.08s;
+}
+.table-modal-close:hover {
+  background: var(--paper-3);
+  color: var(--ink);
+  border-color: var(--rule-soft);
+}
+.table-modal-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.table-modal-scroll {
+  flex: 1;
+  overflow: auto;
+  background: var(--paper);
+}
+.table-modal-scroll > table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  width: max-content;
+  min-width: 100%;
+}
+.table-modal-scroll th,
+.table-modal-scroll td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--rule-soft);
+  background: var(--paper);
+  white-space: nowrap;
+}
+/* Wrap mode — let cell content wrap to the column width and clamp the
+   table to the scroll container so columns hold their share. */
+.table-modal-scroll.wrap > table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+.table-modal-scroll.wrap th,
+.table-modal-scroll.wrap td {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+.table-modal-scroll th {
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--rule);
+  cursor: pointer;
+  user-select: none;
+}
+.table-modal-scroll th:hover {
+  color: var(--ink-2);
+}
+.table-modal-scroll th.sorted {
+  color: var(--ink);
+}
+.table-modal-scroll .th-sort-btn {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+.table-modal-scroll .th-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.table-modal-scroll .th-sort {
+  font-size: 0.85em;
+  color: var(--ink-4);
+  opacity: 0.5;
+}
+/* Sticky header row + sticky first column so context stays visible
+   while reviewing wide / tall tables. */
+.table-modal-scroll table.table-sticky thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.table-modal-scroll table.table-sticky tbody td:first-child,
+.table-modal-scroll table.table-sticky thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+.table-modal-scroll table.table-sticky thead th:first-child {
+  z-index: 3;
+}
+.table-modal-scroll table.table-sticky tbody td:first-child {
+  background: var(--paper);
+  border-right: 1px solid var(--rule-soft);
+}
+.table-modal-scroll table.table-sticky thead th:first-child {
+  border-right: 1px solid var(--rule-soft);
+}
+/* Soft shadow under the sticky header row so it reads as floating
+   above the scrolled body. Same treatment on the right edge of the
+   sticky first column. */
+.table-modal-scroll table.table-sticky thead th {
+  box-shadow: 0 1px 0 var(--rule-soft);
+}
+.table-modal-scroll table.table-sticky tbody td:first-child {
+  box-shadow: 1px 0 0 var(--rule-soft);
+}
+.table-modal-scroll table.table-sticky thead th:first-child {
+  box-shadow:
+    1px 0 0 var(--rule-soft),
+    0 1px 0 var(--rule-soft);
+}
+/* Column resize handle inside the modal viewer — quiet by default,
+   solid rule on hover, accent on drag. Hidden in wrap mode since
+   table-layout:fixed makes per-column drag meaningless once columns
+   share the container width. */
+.table-modal-scroll th {
+  position: relative;
+}
+.table-modal-scroll table.table-resizable-cols .th-resizer {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  user-select: none;
+  z-index: 3;
+}
+.table-modal-scroll table.table-resizable-cols .th-resizer::before {
+  content: "";
+  position: absolute;
+  inset: 6px 2px 6px 2px;
+  background: transparent;
+  border-radius: 1px;
+  transition: background 0.08s;
+}
+.table-modal-scroll table.table-resizable-cols th:hover .th-resizer::before,
+.table-modal-scroll table.table-resizable-cols .th-resizer:hover::before {
+  background: var(--rule);
+}
+.table-modal-scroll table.table-resizable-cols .th-resizer:active::before {
+  background: var(--accent, var(--ink-3));
+}
+.table-modal-scroll.wrap table.table-resizable-cols .th-resizer {
+  display: none;
+}
+.table-modal-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  background: linear-gradient(
+    135deg,
+    transparent 0 7px,
+    var(--rule) 7px 8px,
+    transparent 8px 10px,
+    var(--rule) 10px 11px,
+    transparent 11px
+  );
+  z-index: 4;
+}
+
+.document ul:not(.tasks) {
+  padding-left: 22px;
+  margin: 8px 0 24px;
+}
+.document ul:not(.tasks) li {
+  margin-bottom: 6px;
+}
+.document ul:not(.tasks) li::marker {
+  color: var(--ink-4);
+}
+
+/* Diagram (ascii layout sketch) */
+.diagram {
+  background: var(--paper-2);
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  padding: 18px;
+  margin: 16px 0 28px;
+  display: grid;
+  grid-template-columns: 90px 1fr 110px;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.dg-box {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 14px 10px;
+  text-align: center;
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-2);
+}
+.dg-box.center {
+  border-color: var(--accent);
+  background: oklch(0.98 0.01 265);
+  color: var(--accent-fg);
+}
+.dg-label {
+  font-size: 10px;
+  color: var(--ink-3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.dg-name {
+  font-weight: 500;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+}
+.dg-box.center .dg-name {
+  color: var(--accent-fg);
+}
+.dg-stripes {
+  height: 22px;
+  margin-top: 8px;
+  width: 100%;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent 0 4px,
+    var(--rule-soft) 4px 5px
+  );
+  border-radius: 3px;
+}

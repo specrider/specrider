@@ -1,0 +1,16 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "windows": [
+      {
+        "title": "SpecRider",
+        "width": 1200,
+        "height": 800,
+        "visible": false,
+        "decorations": true,
+        "dragDropEnabled": false,
+        "transparent": false
+      }
+    ]
+  }
+}

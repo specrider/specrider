@@ -1,0 +1,297 @@
+/* === Workspace-trust prompt === */
+
+.trust-prompt-backdrop {
+  z-index: 1300;
+  align-items: center;
+  padding-top: 0;
+}
+
+.trust-prompt {
+  width: 480px;
+  max-width: 92vw;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  box-shadow: 0 24px 64px -8px color-mix(in oklch, black 35%, transparent);
+  padding: 24px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trust-prompt-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.trust-prompt-path {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-2);
+  background: var(--rule-soft);
+  border-radius: 6px;
+  padding: 6px 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trust-prompt-linked-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trust-prompt-linked-item {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  background: var(--rule-soft);
+  border-radius: 6px;
+  padding: 6px 10px;
+  min-width: 0;
+}
+
+.trust-prompt-linked-handle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.trust-prompt-linked-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.trust-prompt-body {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.45;
+}
+
+.trust-prompt-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.trust-prompt-btn {
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+}
+.trust-prompt-btn:hover {
+  background: var(--rule-soft);
+}
+.trust-prompt-btn.primary {
+  background: var(--accent, var(--ink));
+  color: var(--paper);
+  border-color: transparent;
+}
+.trust-prompt-btn.primary:hover {
+  filter: brightness(1.05);
+}
+
+/* === Updater UI === */
+
+/* Title-bar chip — visible whenever an update is available, mid-
+   download, mid-install, or pending-restart. Pulsing dot draws the eye
+   the way the git status cluster does. */
+.tb-update-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 6px;
+  padding: 3px 10px 3px 8px;
+  font-size: 11.5px;
+  font-weight: 550;
+  color: var(--ink);
+  background: color-mix(in oklch, var(--accent, var(--ink)) 10%, var(--paper));
+  border: 1px solid
+    color-mix(in oklch, var(--accent, var(--ink)) 25%, var(--rule));
+  border-radius: 999px;
+  cursor: pointer;
+}
+.tb-update-chip:hover {
+  background: color-mix(in oklch, var(--accent, var(--ink)) 18%, var(--paper));
+}
+.tb-update-chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--accent, var(--ink));
+  flex-shrink: 0;
+}
+.tb-update-chip.available .tb-update-chip-dot {
+  animation: tb-update-chip-pulse 1.6s ease-in-out infinite;
+}
+.tb-update-chip.restart-pending {
+  background: color-mix(in oklch, var(--accent, var(--ink)) 22%, var(--paper));
+  border-color: color-mix(in oklch, var(--accent, var(--ink)) 45%, var(--rule));
+}
+@keyframes tb-update-chip-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.85);
+  }
+}
+
+/* Update-available modal */
+.update-modal-backdrop {
+  z-index: 1400;
+  align-items: center;
+  padding-top: 0;
+}
+.update-modal {
+  width: 520px;
+  max-width: 92vw;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  box-shadow: 0 24px 64px -8px color-mix(in oklch, black 35%, transparent);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.update-modal-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.update-modal-versions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.update-modal-version-from {
+  text-decoration: line-through;
+  color: var(--ink-3);
+}
+.update-modal-version-arrow {
+  color: var(--ink-3);
+}
+.update-modal-version-to {
+  font-weight: 600;
+  color: var(--ink);
+}
+.update-modal-notes {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  max-height: 160px;
+  overflow-y: auto;
+  padding: 10px 12px;
+  background: var(--rule-soft);
+  border-radius: 6px;
+}
+.update-modal-notes-body {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.update-modal-link {
+  align-self: flex-start;
+  background: transparent;
+  border: none;
+  color: var(--accent, var(--ink));
+  font-size: 12px;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.update-modal-link:hover {
+  filter: brightness(1.15);
+}
+.update-modal-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.update-modal-progress-bar {
+  height: 6px;
+  background: var(--rule-soft);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.update-modal-progress-fill {
+  height: 100%;
+  background: var(--accent, var(--ink));
+  transition: width 120ms ease-out;
+}
+.update-modal-progress-label {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+.update-modal-error {
+  font-size: 12.5px;
+  color: var(--ink);
+  background: color-mix(in oklch, #d93b3b 15%, var(--paper));
+  border: 1px solid color-mix(in oklch, #d93b3b 35%, var(--rule));
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+.update-modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+.update-modal-btn {
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+}
+.update-modal-btn:hover:not(:disabled) {
+  background: var(--rule-soft);
+}
+.update-modal-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.update-modal-btn.primary {
+  background: var(--accent, var(--ink));
+  color: var(--paper);
+  border-color: transparent;
+}
+.update-modal-btn.primary:hover {
+  filter: brightness(1.05);
+}
+.update-modal-btn.tertiary {
+  color: var(--ink-3);
+  border-color: transparent;
+}
+.update-modal-btn.tertiary:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--rule-soft);
+}

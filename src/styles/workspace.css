@@ -1,0 +1,1219 @@
+/* --- Middle stack.
+ * The center column subdivides into reader/editor plus an action pane. */
+.middle-stack {
+  grid-area: reader;
+  display: grid;
+  /* Always 3 tracks. Closed = 1fr 0px 0px (action collapsed). App.tsx
+     overrides inline when an action pane is open. Width transition
+     parallels the .panes outer grid so opening / closing the terminal
+     or diff explorer feels like the browser/outline pane animations. */
+  grid-template-columns: 1fr 0px 0px;
+  min-width: 0;
+  min-height: 0;
+  transition: grid-template-columns 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.splitter-center {
+  position: relative;
+  cursor: col-resize;
+  background: transparent;
+  transition: opacity 140ms ease;
+}
+.splitter-center::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  right: 2px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.splitter-center:hover::after {
+  opacity: 0.35;
+}
+.splitter-center:active::after {
+  opacity: 0.6;
+}
+/* Splitter rendered always so the column transition has something to
+   collapse; hide pointer affordance when no action pane is open. */
+.middle-stack:not(.with-action) .splitter-center {
+  cursor: default;
+  pointer-events: none;
+  opacity: 0;
+}
+/* Reader pane hidden via the Markdown toggle. Mirrors the
+   .left-pane-hidden / .right-pane-hidden idiom: column collapses to 0
+   in the inline style; the Reader fades + slides out so the
+   transition feels like the browser/outline pane animations. */
+.middle-stack.reader-hidden > .reader {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-10px);
+  border-right-color: transparent;
+}
+.middle-stack.reader-hidden > .splitter-center {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* --- Action column wrapper. Lives in middle-stack column 3; hosts
+   the terminal and diff panes. When only one is open the panes
+   overlap in the same cell (one hidden via aria-hidden+opacity), so a
+   future cross-fade is still possible. When both are open, the column
+   subdivides into three rows: terminal | h-splitter | diff. --- */
+.action-column {
+  grid-column: 3 / 4;
+  grid-row: 1 / 2;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  /* Single column so both panes share the same horizontal track. The
+     row template flips between 1fr (one pane fills) and split-vertical
+     (terminal | splitter | diff) when both are open. */
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+/* Default (single-open or none): both panes overlap in the same cell;
+   the closed one is opacity-hidden via aria-hidden. */
+.action-column > .terminal-pane,
+.action-column > .diff-explorer-pane {
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
+}
+.action-column > .splitter-action-vertical {
+  display: none;
+}
+/* Both panes open: terminal -> row 1, splitter -> row 2, diff -> row 3. */
+.action-column.split-vertical > .terminal-pane {
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
+}
+.action-column.split-vertical > .splitter-action-vertical {
+  display: block;
+  grid-column: 1 / 2;
+  grid-row: 2 / 3;
+  position: relative;
+  cursor: row-resize;
+  background: transparent;
+}
+.action-column.split-vertical > .splitter-action-vertical::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 2px;
+  bottom: 2px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.action-column.split-vertical > .splitter-action-vertical:hover::after {
+  opacity: 0.35;
+}
+.action-column.split-vertical > .splitter-action-vertical:active::after {
+  opacity: 0.6;
+}
+.action-column.split-vertical > .diff-explorer-pane {
+  grid-column: 1 / 2;
+  grid-row: 3 / 4;
+}
+
+/* --- Terminal pane (theme-aware, fills its grid cell). --- */
+.terminal-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--term-bg, var(--reader-bg));
+  color: var(--term-fg, var(--ink));
+  border-left: 1px solid var(--rule);
+  transition:
+    opacity 140ms ease,
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.terminal-pane[aria-hidden="true"] {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(10px);
+}
+.terminal-pane-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 6px 12px;
+  border-bottom: 1px solid var(--rule-soft);
+  background: var(--paper-2);
+  color: var(--ink-2);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  font-size: calc(var(--ui-size, 13px) * 0.92);
+  line-height: 1.4;
+  flex-shrink: 0;
+  height: 47px;
+  box-sizing: border-box;
+}
+.terminal-pane-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+.terminal-pane-title {
+  font-weight: 600;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+.terminal-pane-cwd {
+  font-family: "JetBrains Mono", "SF Mono", Menlo, ui-monospace, monospace;
+  font-size: calc(var(--ui-size, 13px) * 0.88);
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+.terminal-pane-status {
+  font-size: calc(var(--ui-size, 13px) * 0.85);
+  color: var(--ink-3);
+}
+.terminal-pane-status.status-starting {
+  color: var(--amber);
+}
+.terminal-pane-status.status-exited,
+.terminal-pane-status.status-error {
+  color: var(--rose);
+}
+.terminal-pane-spacer {
+  flex: 1 1 auto;
+}
+.terminal-pane-close {
+  background: transparent;
+  border: none;
+  color: var(--ink-3);
+  font:
+    18px / 1 system-ui,
+    sans-serif;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+.terminal-pane-close:hover {
+  background: var(--paper-3);
+  color: var(--ink);
+}
+.terminal-pane-error {
+  background: var(--rose-soft);
+  color: var(--rose);
+  border-bottom: 1px solid var(--rule-soft);
+  padding: 6px 12px;
+  font:
+    12px / 1.4 -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    sans-serif;
+  flex-shrink: 0;
+}
+.terminal-pane-error-hint {
+  color: var(--ink-3);
+}
+.terminal-pane-error code {
+  font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0 4px;
+  border-radius: 2px;
+}
+/* Wrapper padding so xterm doesn't bleed into the cell edge. */
+.terminal-pane-host {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 12px 14px 8px 14px;
+  overflow: hidden;
+  background: var(--term-bg, var(--reader-bg));
+}
+.terminal-pane-host .xterm {
+  height: 100%;
+}
+/* .terminal-pane-host:focus-within {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+} */
+
+/* --- Diff explorer pane. Sister of
+   .terminal-pane; lives in the same action column. Layout
+   positioning (which grid row) is owned by .action-column. --- */
+.diff-explorer-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--reader-bg);
+  color: var(--ink);
+  border-left: 1px solid var(--rule);
+  transition:
+    opacity 140ms ease,
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.diff-explorer-pane[aria-hidden="true"] {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(10px);
+}
+.diff-explorer-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 6px 12px;
+  border-bottom: 1px solid var(--rule-soft);
+  background: var(--paper-2);
+  color: var(--ink-2);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  font-size: calc(var(--ui-size, 13px) * 0.92);
+  line-height: 1.4;
+  flex-shrink: 0;
+  height: 47px;
+  box-sizing: border-box;
+}
+.diff-explorer-sha {
+  display: inline-flex;
+  align-items: center;
+  font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  font-size: calc(var(--ui-size, 13px) * 0.85);
+  line-height: 1;
+  font-weight: 600;
+  color: var(--accent-fg);
+  background: var(--accent-soft);
+  padding: 4px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+.diff-explorer-badge.unstaged {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--amber);
+  font-size: calc(var(--ui-size, 13px) * 1.05);
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+.diff-explorer-title {
+  color: var(--ink);
+  font-weight: 500;
+  font-size: var(--ui-size, 13px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
+}
+.diff-explorer-meta {
+  color: var(--ink-3);
+  font-size: calc(var(--ui-size, 13px) * 0.85);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.diff-explorer-empty {
+  color: var(--ink-3);
+  font-style: italic;
+  font-size: var(--ui-size, 13px);
+}
+.diff-explorer-spacer {
+  flex: 1 1 auto;
+}
+.diff-explorer-close {
+  background: transparent;
+  border: none;
+  color: var(--ink-3);
+  font:
+    18px / 1 system-ui,
+    sans-serif;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+.diff-explorer-close:hover {
+  background: var(--paper-3);
+  color: var(--ink);
+}
+.diff-explorer-body-message {
+  border-bottom: 1px solid var(--rule-soft);
+  padding: 8px 12px;
+  background: var(--paper-2);
+  flex-shrink: 0;
+  max-height: 120px;
+  overflow-y: auto;
+}
+.diff-explorer-body-message pre {
+  font:
+    12px / 1.5 "JetBrains Mono",
+    "SF Mono",
+    Menlo,
+    monospace;
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  margin: 0;
+}
+.diff-explorer-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  background: var(--paper);
+}
+
+/* === File list + diff body responsive layout === */
+.diff-explorer-layout {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+}
+.diff-explorer-layout.narrow {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "message"
+    "commit"
+    "files"
+    "splitter"
+    "body";
+}
+.diff-explorer-layout.wide {
+  grid-template-columns: minmax(260px, 34%) minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-areas:
+    "message body"
+    "commit body"
+    "files body";
+}
+.diff-explorer-layout > .diff-explorer-body {
+  /* override the outer flex sizing — we're inside a grid track now */
+  flex: initial;
+  height: 100%;
+  min-height: 0;
+}
+.diff-explorer-layout .diff-explorer-body-message {
+  grid-area: message;
+}
+.diff-explorer-layout .diff-explorer-commit-slot {
+  grid-area: commit;
+  min-width: 0;
+}
+.diff-explorer-files {
+  grid-area: files;
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--rule-soft);
+  overflow-y: auto;
+  min-height: 0;
+}
+.diff-explorer-file-splitter {
+  grid-area: splitter;
+}
+.diff-explorer-layout .diff-explorer-body {
+  grid-area: body;
+}
+.diff-explorer-layout.wide .diff-explorer-body-message,
+.diff-explorer-layout.wide .diff-explorer-commit-slot,
+.diff-explorer-layout.wide .diff-explorer-files {
+  border-right: 1px solid var(--rule-soft);
+}
+.diff-explorer-layout.wide .diff-explorer-files {
+  border-bottom: none;
+}
+.diff-explorer-layout.wide .diff-explorer-file-splitter {
+  display: none;
+}
+.splitter-horizontal {
+  position: relative;
+  margin: 0;
+  cursor: row-resize;
+  background: transparent;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+/* Kill the inherited .splitter::before gradient strip — that's the
+ * 47px title-bar-edge effect designed for vertical splitters. On a
+ * horizontal splitter it leaks downward into the diff body and looks
+ * like a phantom header. */
+.splitter-horizontal::before {
+  content: none;
+}
+.splitter-horizontal::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 2px;
+  bottom: 2px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.splitter-horizontal:hover::after {
+  opacity: 0.35;
+}
+.splitter-horizontal:active::after {
+  opacity: 0.6;
+}
+
+/* === CommitFileList === */
+.cfl-root {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+}
+.cfl-empty {
+  padding: 14px;
+  color: var(--ink-3);
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: var(--ui-size, 13px);
+  font-style: italic;
+}
+.cfl-filter-banner {
+  margin: 6px 8px;
+  padding: 5px 10px;
+  background: var(--accent-soft);
+  color: var(--accent-fg);
+  border-radius: 3px;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: calc(var(--ui-size, 13px) * 0.88);
+}
+.cfl-filter-clear {
+  background: transparent;
+  border: none;
+  color: var(--accent-fg);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 4px;
+}
+.cfl-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: calc(100% - 8px);
+  margin: 0 4px;
+  padding: 0;
+  background: transparent;
+  border-radius: 4px;
+}
+.cfl-row:hover {
+  background: var(--paper-3);
+}
+.cfl-row.selected {
+  background: var(--accent-soft);
+  color: var(--accent-fg);
+}
+.cfl-row-button {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  padding: 5px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  text-align: left;
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: calc(var(--ui-size, 13px) * 0.92);
+  color: inherit;
+}
+.cfl-check {
+  margin-left: 12px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.cfl-staging-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 12px;
+  border-bottom: 1px solid var(--rule-soft);
+  background: var(--paper-2);
+  font-size: calc(var(--ui-size, 13px) * 0.85);
+  color: var(--ink-3);
+}
+.cfl-staging-count {
+  font-family: var(--font-sans);
+}
+.cfl-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: calc(var(--ui-size, 13px) * 0.78);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cfl-status.status-added {
+  background: var(--sage-soft);
+  color: var(--sage);
+}
+.cfl-status.status-modified {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+.cfl-status.status-deleted {
+  background: var(--rose-soft);
+  color: var(--rose);
+}
+.cfl-status.status-renamed {
+  background: var(--accent-soft);
+  color: var(--accent-fg);
+}
+.cfl-status.status-copied {
+  background: var(--paper-3);
+  color: var(--ink-2);
+}
+.cfl-row.selected .cfl-status {
+  /* keep status badge readable on the selected (accent-soft) row by
+     bumping its own contrast slightly */
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ink) 24%, transparent);
+}
+.cfl-path {
+  font-family: var(--font-mono);
+  font-size: calc(var(--ui-size, 13px) * 0.92);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.cfl-counts {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: calc(var(--ui-size, 13px) * 0.85);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.cfl-add {
+  color: var(--sage);
+}
+.cfl-del {
+  color: var(--rose);
+}
+.cfl-row.selected .cfl-add,
+.cfl-row.selected .cfl-del {
+  /* readable against accent-soft */
+  color: var(--accent-fg);
+}
+.diff-explorer-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: calc(var(--ui-size, 13px) * 0.85);
+  color: var(--ink-3);
+  cursor: pointer;
+  user-select: none;
+}
+.diff-explorer-toggle input {
+  margin: 0;
+  cursor: pointer;
+}
+.diff-explorer-collapse-all {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ink-3);
+  padding: 3px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font: inherit;
+  font-size: calc(var(--ui-size, 13px) * 0.85);
+}
+.diff-explorer-collapse-all:hover {
+  background: var(--paper-3);
+  color: var(--ink);
+  border-color: var(--rule);
+}
+
+/* === Commit diff body === */
+.cdb-root {
+  --cdb-old-gutter-width: 48px;
+  --cdb-new-gutter-width: 48px;
+  --cdb-marker-width: 18px;
+  --cdb-line-chrome-width: calc(
+    var(--cdb-old-gutter-width) +
+    var(--cdb-new-gutter-width) +
+    var(--cdb-marker-width)
+  );
+
+  font-family: var(--font-mono);
+  font-size: var(--mono-size, 12px);
+  line-height: 1.5;
+  color: var(--ink);
+  padding-bottom: 24px;
+}
+.cdb-virtual-spacer {
+  position: relative;
+  width: var(--cdb-scroll-width, 100%);
+  min-width: 100%;
+}
+.cdb-virtual-row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: auto;
+  width: var(--cdb-scroll-width, 100%);
+  min-width: 100%;
+}
+.cdb-virtual-row.sticky {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+.cdb-virtual-row .cdb-file-head {
+  position: sticky;
+}
+.cdb-empty {
+  padding: 28px 32px;
+  text-align: center;
+  color: var(--ink-3);
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: var(--ui-size, 13px);
+}
+.cdb-empty.cdb-error {
+  color: var(--rose);
+}
+.cdb-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--rule);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+  animation: cdb-spin 0.8s linear infinite;
+}
+@keyframes cdb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cdb-file {
+  border-top: 1px solid var(--rule);
+  background: var(--paper);
+}
+.cdb-file:first-child {
+  border-top: none;
+}
+.cdb-file-head {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 6px 14px;
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--rule-soft);
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: calc(var(--ui-size, 13px) * 0.92);
+}
+.cdb-file-head.interactive {
+  cursor: pointer;
+  user-select: none;
+}
+.cdb-file-head.interactive:hover {
+  background: var(--paper-3);
+}
+.cdb-file-head.interactive:hover .cdb-file-main,
+.cdb-file-head.interactive:hover .cdb-counts {
+  background: var(--paper-3);
+}
+.cdb-file.collapsed .cdb-file-head {
+  border-bottom-color: var(--rule);
+}
+.cdb-file-main {
+  position: sticky;
+  left: 14px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: min(720px, calc(100vw - 320px));
+  padding-right: 10px;
+  background: var(--paper-2);
+}
+.cdb-file-toggle {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--ink-3);
+  padding: 0;
+  border-radius: 3px;
+  cursor: pointer;
+  transition:
+    transform 0.14s,
+    color 0.08s,
+    background 0.08s;
+  transform: rotate(0deg);
+  flex-shrink: 0;
+}
+.cdb-file-toggle.open {
+  transform: rotate(90deg);
+  color: var(--ink-2);
+}
+.cdb-file-toggle:hover {
+  color: var(--ink);
+  background: var(--paper-3);
+}
+.cdb-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: calc(var(--ui-size, 13px) * 0.78);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cdb-status.status-added {
+  background: var(--sage-soft);
+  color: var(--sage);
+}
+.cdb-status.status-modified {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+.cdb-status.status-deleted {
+  background: var(--rose-soft);
+  color: var(--rose);
+}
+.cdb-status.status-renamed {
+  background: var(--accent-soft);
+  color: var(--accent-fg);
+}
+.cdb-status.status-copied {
+  background: var(--paper-3);
+  color: var(--ink-2);
+}
+.cdb-path {
+  font-family: var(--font-mono);
+  font-size: calc(var(--ui-size, 13px) * 0.92);
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.cdb-path-old {
+  color: var(--ink-4);
+  text-decoration: line-through;
+}
+.cdb-path-arrow {
+  color: var(--ink-4);
+  margin: 0 6px;
+}
+.cdb-path-new {
+  color: var(--ink);
+}
+.cdb-counts {
+  position: sticky;
+  right: 14px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  padding-left: 8px;
+  background: var(--paper-2);
+  font-family: var(--font-mono);
+  font-size: calc(var(--ui-size, 13px) * 0.85);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.cdb-add {
+  color: var(--sage);
+}
+.cdb-del {
+  color: var(--rose);
+}
+
+.cdb-hunk {
+  border-top: 1px solid var(--rule-soft);
+}
+.cdb-hunk:first-of-type {
+  border-top: none;
+}
+.cdb-hunk-head {
+  width: var(--cdb-scroll-width, 100%);
+  min-width: 100%;
+  padding: 4px 14px;
+  min-height: 26px;
+  box-sizing: border-box;
+  background: var(--paper-2);
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: calc(var(--mono-size, 12px) * 0.95);
+  border-bottom: 1px solid var(--rule-soft);
+}
+.cdb-hunk-head::before {
+  content: attr(data-hunk-label);
+  position: sticky;
+  left: 14px;
+  z-index: 2;
+  padding-right: 10px;
+  background: var(--paper-2);
+}
+.cdb-hunk-head > .cdb-hunk-label {
+  visibility: hidden;
+}
+.cdb-hunk-context {
+  color: var(--ink-2);
+}
+/* One horizontal scrollbar per hunk (matching SourceTree). The inner
+   `.cdb-hunk-content` grid sizes to the widest line via max-content,
+   so all lines share the same column widths and their backgrounds
+   stretch the full scroll width — not per-line scrollbars. */
+.cdb-hunk-lines {
+  overflow-x: auto;
+}
+.cdb-hunk-content {
+  /* Container is sized by its widest line via `width: max-content`
+     and stretched to fill the pane via `min-width: 100%`. Each
+     `.cdb-line` is its own grid with the same column template plus
+     `min-width: 100%` so its +/- background reaches the pane edge
+     even when the line itself is short. */
+  width: max-content;
+  min-width: 100%;
+}
+.cdb-binary,
+.cdb-unloaded,
+.cdb-empty-hunks {
+  padding: 14px;
+  color: var(--ink-3);
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: var(--ui-size, 13px);
+  font-style: italic;
+}
+.cdb-unloaded {
+  font-style: normal;
+}
+.cdb-large-hint {
+  padding: 14px;
+  color: var(--ink-3);
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: var(--ui-size, 13px);
+}
+.cdb-large-expand {
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 2px 10px;
+  font: inherit;
+  cursor: pointer;
+  color: var(--accent-fg);
+  margin-left: 4px;
+}
+.cdb-large-expand:hover {
+  background: var(--paper-3);
+}
+.cdb-hunk-more {
+  padding: 8px 14px;
+  background: var(--paper-2);
+  border-top: 1px solid var(--rule-soft);
+}
+.cdb-hunk-more-btn {
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 3px 10px;
+  font: inherit;
+  cursor: pointer;
+  color: var(--accent-fg);
+}
+.cdb-hunk-more-btn:hover {
+  background: var(--paper-3);
+}
+.cdb-truncated-hint {
+  padding: 10px 14px;
+  color: var(--ink-3);
+  background: var(--paper-2);
+  border-top: 1px solid var(--rule-soft);
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: calc(var(--ui-size, 13px) * 0.9);
+  font-style: italic;
+}
+.cdb-line {
+  --cdb-line-bg: var(--paper);
+  --cdb-selected-line-bg: color-mix(
+    in oklab,
+    var(--accent-soft) 70%,
+    var(--cdb-line-bg)
+  );
+
+  /* Each line is its own grid (not subgrid) so we control its width
+     independently of the hunk content's intrinsic width. The last
+     column is `minmax(max-content, 1fr)` so the line's background
+     stretches to the full container width — and since the container
+     itself is `width: max-content; min-width: 100%`, that means the
+     pane width when content is short, and the widest line otherwise
+     (so all rows share the same right edge and the +/- highlight
+     keeps going past the viewport when the user scrolls right). */
+  display: grid;
+  position: relative;
+  grid-template-columns:
+    var(--cdb-old-gutter-width) var(--cdb-new-gutter-width)
+    var(--cdb-marker-width) minmax(0, 1fr);
+  width: var(--cdb-scroll-width, 100%);
+  min-width: 100%;
+  align-items: baseline;
+  gap: 0;
+  padding: 0 14px 0 0;
+  white-space: pre;
+  border-left: none;
+  min-height: 18px;
+  box-sizing: border-box;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.cdb-line::before {
+  content: "";
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  grid-column: 1 / 4;
+  grid-row: 1;
+  align-self: stretch;
+  width: var(--cdb-line-chrome-width);
+  background: var(--cdb-line-bg);
+  box-shadow: 1px 0 0 var(--rule-soft);
+  pointer-events: none;
+}
+.cdb-line:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+.cdb-root.soft-wrap .cdb-hunk-lines {
+  overflow-x: visible;
+}
+.cdb-root.soft-wrap .cdb-hunk-content {
+  width: 100%;
+}
+/* Drop the `max-content` floor on the last column so long text wraps
+   instead of forcing a wide row. Pair with the `pre-wrap` rule below. */
+.cdb-root.soft-wrap .cdb-line {
+  grid-template-columns:
+    var(--cdb-old-gutter-width) var(--cdb-new-gutter-width)
+    var(--cdb-marker-width) 1fr;
+}
+.cdb-root.soft-wrap .cdb-line .cdb-line-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.cdb-line.addition {
+  --cdb-line-bg: color-mix(in oklab, var(--sage-soft) 60%, var(--paper));
+
+  background: var(--cdb-line-bg);
+}
+.cdb-line.addition::before {
+  box-shadow:
+    inset 3px 0 0 var(--sage),
+    1px 0 0 var(--rule-soft);
+}
+.cdb-line.deletion {
+  --cdb-line-bg: color-mix(in oklab, var(--rose-soft) 60%, var(--paper));
+
+  background: var(--cdb-line-bg);
+}
+.cdb-line.deletion::before {
+  box-shadow:
+    inset 3px 0 0 var(--rose),
+    1px 0 0 var(--rule-soft);
+}
+.cdb-line.context {
+  background: var(--cdb-line-bg);
+}
+.cdb-gutter {
+  position: sticky;
+  grid-row: 1;
+  z-index: 3;
+  display: block;
+  align-self: stretch;
+  box-sizing: border-box;
+  min-height: 18px;
+  background: transparent;
+  text-align: right;
+  padding-right: 8px;
+  color: var(--ink-4);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+.cdb-gutter.old {
+  grid-column: 1;
+  left: 0;
+  padding-left: 12px;
+}
+.cdb-gutter.new {
+  grid-column: 2;
+  left: var(--cdb-old-gutter-width);
+}
+.cdb-marker {
+  position: sticky;
+  grid-column: 3;
+  grid-row: 1;
+  left: calc(var(--cdb-old-gutter-width) + var(--cdb-new-gutter-width));
+  z-index: 3;
+  display: block;
+  align-self: stretch;
+  min-height: 18px;
+  background: transparent;
+  text-align: center;
+  color: var(--ink-3);
+  user-select: none;
+}
+.cdb-line.addition .cdb-marker {
+  color: var(--sage);
+}
+.cdb-line.deletion .cdb-marker {
+  color: var(--rose);
+}
+.cdb-line.selected {
+  background: var(--cdb-selected-line-bg);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in oklab, var(--accent) 70%, transparent);
+}
+.cdb-line.selected::before {
+  background: var(--cdb-selected-line-bg);
+  box-shadow:
+    inset 3px 0 0 var(--accent),
+    1px 0 0 color-mix(in oklab, var(--accent) 45%, var(--rule-soft));
+}
+.cdb-line.selected .cdb-gutter,
+.cdb-line.selected .cdb-marker {
+  color: var(--accent-fg);
+}
+.cdb-line-text {
+  grid-column: 4;
+  grid-row: 1;
+  display: block;
+  padding-left: 4px;
+  color: var(--ink);
+  background: var(--cdb-line-bg);
+  cursor: text;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.cdb-line.selected .cdb-line-text {
+  background: var(--cdb-selected-line-bg);
+}
+.cdb-find-match {
+  background: color-mix(in oklab, var(--amber-soft) 85%, transparent);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+.cdb-find-match.current {
+  background: var(--amber);
+  color: var(--paper);
+}
+/* Shiki dual-theme tokens inside diff lines (mirrors the rule under
+   `.document pre code.shiki-tokens span`). The line-bg tints (sage/rose
+   for +/-) are sibling to these spans; both stack cleanly because the
+   token spans only set color, not background. */
+.cdb-line-text.shiki-tokens span {
+  color: var(--shiki-light);
+}
+body.theme-dark .cdb-line-text.shiki-tokens span {
+  color: var(--shiki-dark);
+}
+
+/* `.outline-mode-commits` is the variant class on the right rail when
+   actionMode === "diff" (CommitHistoryPane reuses the .pane.outline
+   shell). Currently no overrides — the default outline chrome is
+   already mostly headers + content. */
+
+/* --- Terminal spike overlay. --- */
+.terminal-spike-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(15, 16, 26, 0.55);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 32px 32px 48px;
+}
+.terminal-spike-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1100px;
+  background: #1a1b26;
+  color: #c0caf5;
+  border-radius: 10px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+.terminal-spike-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 14px;
+  border-bottom: 1px solid #2a2c3d;
+  font:
+    12px / 1.4 -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    system-ui,
+    sans-serif;
+  color: #a9b1d6;
+  flex-wrap: wrap;
+}
+.terminal-spike-header strong {
+  color: #c0caf5;
+  font-weight: 600;
+  font-size: 13px;
+}
+.terminal-spike-metric {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.terminal-spike-close {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: #a9b1d6;
+  font:
+    18px / 1 system-ui,
+    sans-serif;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.terminal-spike-close:hover {
+  background: #2a2c3d;
+  color: #c0caf5;
+}
+.terminal-spike-host {
+  flex: 1 1 auto;
+  padding: 12px 14px;
+  min-height: 0;
+}
+.terminal-spike-host .xterm {
+  height: 100%;
+}

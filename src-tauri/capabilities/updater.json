@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "updater",
+  "description": "Updater check/download/install — granted to the main window only. Additional project windows (`window-*`) and the Settings window don't get direct API access; the React-side `useUpdaterState` hook (Batch 4) shares the cached check result across windows in-process so we never hit the endpoint more than once per launch.",
+  "windows": ["main"],
+  "permissions": ["updater:default"]
+}
