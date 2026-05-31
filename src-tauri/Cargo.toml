@@ -63,7 +63,7 @@ gtk = "0.18"
 # Win32 bindings for flipping windows between light and dark via
 # DwmSetWindowAttribute + the uxtheme.dll ordinal trick. Version pinned
 # to one already in Tauri's transitive tree (see Cargo.lock).
-windows-sys = { version = "0.52", features = ["Win32_Foundation", "Win32_Graphics_Dwm", "Win32_System_LibraryLoader", "Win32_UI_WindowsAndMessaging"] }
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Graphics_Dwm", "Win32_System_LibraryLoader", "Win32_UI_WindowsAndMessaging"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2-app-kit = { version = "0.3.2", features = ["NSButton", "NSView", "NSWindow", "NSApplication", "NSImage", "NSWorkspace", "NSResponder"] }
