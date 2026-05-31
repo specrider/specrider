@@ -1,3 +1,4 @@
+import { getVersion } from "@tauri-apps/api/app";
 import { listen } from "@tauri-apps/api/event";
 import { writeText as writeClipboardText } from "@tauri-apps/plugin-clipboard-manager";
 import {
@@ -367,8 +368,11 @@ export function useAppCommands({
             if (final.status === "available") {
               setUpdateModalOpen(true);
             } else if (final.status === "none") {
+              const version = await getVersion().catch(() => "");
               void dialogMessage(
-                `SpecRider is up to date (v${final.update?.currentVersion ?? ""}).`,
+                version
+                  ? `SpecRider is up to date (v${version}).`
+                  : "SpecRider is up to date.",
                 { title: "SpecRider", kind: "info" },
               );
             } else if (final.status === "error") {
