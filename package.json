@@ -5,7 +5,7 @@
   "license": "GPL-3.0-or-later",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --force",
     "build": "pnpm typecheck && vite build",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.test.json",
     "lint": "biome check .",
@@ -47,7 +47,7 @@
     "js-yaml": "^4.1.1",
     "katex": "^0.16.45",
     "mdast-util-to-string": "^4.0.0",
-    "mermaid": "^11.14.0",
+    "mermaid": "^11.15.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "remark-frontmatter": "^5.0.0",

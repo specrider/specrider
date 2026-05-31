@@ -248,9 +248,10 @@ fn analyze_file_inner(abs: &Path) -> CachedAnalysis {
 
     let mut frontmatter: Option<serde_json::Value> = None;
     if !frontmatter_yaml.is_empty() {
-        // serde_yml is the maintained drop-in fork of serde_yaml — the
-        // upstream crate is archived and won't get future fixes.
-        match serde_yml::from_str::<serde_json::Value>(&frontmatter_yaml) {
+        // serde_yaml_ng is the maintained, sound continuation of the archived
+        // serde_yaml. We moved off serde_yml because it (and its libyml parser)
+        // were flagged unsound and unmaintained (RUSTSEC-2025-0068 et al.).
+        match serde_yaml_ng::from_str::<serde_json::Value>(&frontmatter_yaml) {
             Ok(v) if v.is_object() => frontmatter = Some(v),
             Ok(_) => {} // top-level not a map → ignore
             Err(e) => {
@@ -908,7 +909,7 @@ mod frontmatter_tests {
     use tempfile::tempdir;
 
     #[test]
-    fn parses_simple_frontmatter_after_serde_yml_swap() {
+    fn parses_simple_frontmatter_after_serde_yaml_ng_swap() {
         let dir = tempdir().unwrap();
         let path = dir.path().join("plan.md");
         fs::write(
