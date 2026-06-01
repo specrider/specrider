@@ -1,6 +1,6 @@
 [package]
 name = "specrider"
-version = "0.1.0"
+version = "0.1.1"
 description = "A workspace for spec-driven development."
 authors = ["Jake Johnson"]
 edition = "2021"
