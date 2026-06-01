@@ -21,6 +21,10 @@ That's it. We designed a purpose-built workflow tool specifically for Markdown s
 
 We hope you enjoy it.
 
+## Try it with the example plans
+
+New to the workflow? Clone the [example plans repo](https://github.com/specrider/specrider-plans-example) — a ready-to-open template with the folder structure, an `AGENTS.md`, an `INDEX.md`, and a handful of sample plans. Open it in SpecRider (`⌘O`) to see the SpecRider Approach in action.
+
 ## Features
 
 - **Outline as the primary surface** — persistent right rail, syncs with scroll position. H1/H2/H3 headings, optional numbered and bulleted list items, task progress per section, click-to-jump with highlight-fade. Three outline-row toggles in Settings → Editor & Outline let you choose what shows.
