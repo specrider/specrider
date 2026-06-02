@@ -282,7 +282,17 @@ impl TerminalManager {
                 if shell.contains(['\0', '\n', ';', '|', '&', '`', '$']) {
                     return Err("refusing to launch unsafe shell".into());
                 }
-                CommandBuilder::new(shell)
+                let mut builder = CommandBuilder::new(shell);
+                // Spawn as a login shell so the user's profile
+                // (.zprofile / .bash_profile, etc.) runs. When SpecRider
+                // is launched from Finder/launchd rather than a terminal
+                // it inherits the bare launchd PATH; login-shell startup
+                // is what restores the PATH the user expects (Homebrew,
+                // pyenv, asdf, …). PowerShell loads its own profile, so
+                // this is POSIX-only.
+                #[cfg(not(windows))]
+                builder.arg("-l");
+                builder
             }
         };
         cmd.cwd(&cwd);
@@ -296,6 +306,25 @@ impl TerminalManager {
                 continue;
             }
             cmd.env(k, v);
+        }
+        // Force a UTF-8 locale when the inherited environment has none.
+        // Finder/launchd-launched apps start with no LANG/LC_*, so the
+        // shell (and agent TUIs) fall back to the C locale and miscount
+        // the *display width* of multibyte UTF-8 glyphs — powerline
+        // prompt arrows, box-drawing, etc. The shell's line editor then
+        // computes the wrong cursor column and its redraws overlap and
+        // garble. Respect any locale the user already exported.
+        if std::env::var_os("LC_ALL").is_none()
+            && std::env::var_os("LC_CTYPE").is_none()
+            && std::env::var_os("LANG").is_none()
+        {
+            // macOS accepts the bare `UTF-8` LC_CTYPE (fixes character
+            // handling without forcing a language/region); glibc needs a
+            // real locale name and ships `C.UTF-8` everywhere.
+            #[cfg(target_os = "macos")]
+            cmd.env("LC_CTYPE", "UTF-8");
+            #[cfg(all(unix, not(target_os = "macos")))]
+            cmd.env("LANG", "C.UTF-8");
         }
 
         let child: Box<dyn Child + Send + Sync> = pair
