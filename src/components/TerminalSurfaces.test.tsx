@@ -202,6 +202,24 @@ describe("TerminalPane", () => {
     fireEvent.keyDown(host, { key: "c", ctrlKey: true });
     expect(apiMocks.terminalWrite).toHaveBeenCalledWith("term-1", "\x03");
 
+    const shiftEnter = new KeyboardEvent("keydown", {
+      key: "Enter",
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    expect(host.dispatchEvent(shiftEnter)).toBe(false);
+    expect(apiMocks.terminalWrite).toHaveBeenCalledWith("term-1", "\x1b\r");
+
+    const ctrlEnter = new KeyboardEvent("keydown", {
+      key: "Enter",
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    expect(host.dispatchEvent(ctrlEnter)).toBe(false);
+    expect(apiMocks.terminalWrite).toHaveBeenCalledWith("term-1", "\x1b\r");
+
     fireEvent.keyDown(host, { key: "v", metaKey: true });
     await waitFor(() =>
       expect(terminalSessionMocks.term.paste).toHaveBeenCalledWith(
