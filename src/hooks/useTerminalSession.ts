@@ -93,6 +93,10 @@ export interface UseTerminalSessionResult {
 
 const DEFAULT_FONT =
   '"JetBrains Mono", "SF Mono", Menlo, ui-monospace, monospace';
+const MIN_START_COLS = 20;
+const MIN_START_ROWS = 5;
+const START_GEOMETRY_TIMEOUT_MS = 700;
+const STABLE_GEOMETRY_FRAMES = 2;
 
 /** Resolves a CSS color value (oklch, hsl, named, etc.) to a string
  *  xterm.js can parse — the WebGL renderer is strict about this and
@@ -321,15 +325,34 @@ export function useTerminalSession(
    *  doesn't throw `_renderer.value.dimensions is undefined`. Also
    *  short-circuits when the host has zero dimensions (display:none
    *  parent, drawer collapsed, etc.). */
-  const safeFit = useCallback(() => {
+  const safeFit = useCallback((): boolean => {
     const fitAddon = fitRef.current;
     const host = containerRef.current;
-    if (!fitAddon || !host) return;
-    if (host.clientWidth <= 0 || host.clientHeight <= 0) return;
+    if (!fitAddon || !host) return false;
+    if (host.clientWidth <= 0 || host.clientHeight <= 0) return false;
+    // The center column animates open over ~180ms (grid-template-columns
+    // transition), so during that window the host is a sliver and a fit()
+    // would collapse xterm to a column or two — the shell's first prompt
+    // then wraps into a tall smear that only clears on the post-animation
+    // refit. Skip fitting until the proposed geometry is plausible; xterm
+    // stays at its construction default (80×24) meanwhile, the host clips
+    // it (overflow:hidden), and the ResizeObserver fires again once the
+    // animation settles. A real terminal pane is always far wider than
+    // this floor, so legitimately-sized panes are never starved.
+    const proposed = fitAddon.proposeDimensions();
+    if (
+      !proposed ||
+      proposed.cols < MIN_START_COLS ||
+      proposed.rows < MIN_START_ROWS
+    ) {
+      return false;
+    }
     try {
       fitAddon.fit();
+      return true;
     } catch {
       // ignore — likely renderer not ready yet
+      return false;
     }
   }, []);
 
@@ -435,15 +458,68 @@ export function useTerminalSession(
   const fit = useCallback(() => {
     const term = termRef.current;
     if (!term) return;
-    safeFit();
+    const didFit = safeFit();
     const sessionId = sessionIdRef.current;
-    if (sessionId && term.cols > 0 && term.rows > 0) {
+    if (didFit && sessionId && term.cols > 0 && term.rows > 0) {
       void terminalResize(sessionId, term.cols, term.rows).catch((e) =>
         setError(e instanceof Error ? e.message : String(e)),
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [safeFit]);
+
+  const waitForStableGeometry = useCallback(
+    async (fitAddon: FitAddon): Promise<void> => {
+      const host = containerRef.current;
+      if (!host) return;
+
+      const deadline = performance.now() + START_GEOMETRY_TIMEOUT_MS;
+      let stableFrames = 0;
+      let lastCols = 0;
+      let lastRows = 0;
+
+      while (performance.now() < deadline) {
+        await new Promise<void>((resolve) =>
+          requestAnimationFrame(() => resolve()),
+        );
+
+        if (host.clientWidth <= 0 || host.clientHeight <= 0) {
+          stableFrames = 0;
+          continue;
+        }
+
+        let proposed: { cols: number; rows: number } | undefined;
+        try {
+          proposed = fitAddon.proposeDimensions() ?? undefined;
+        } catch {
+          stableFrames = 0;
+          continue;
+        }
+
+        if (
+          !proposed ||
+          proposed.cols < MIN_START_COLS ||
+          proposed.rows < MIN_START_ROWS
+        ) {
+          stableFrames = 0;
+          continue;
+        }
+
+        if (proposed.cols === lastCols && proposed.rows === lastRows) {
+          stableFrames += 1;
+        } else {
+          stableFrames = 1;
+          lastCols = proposed.cols;
+          lastRows = proposed.rows;
+        }
+
+        if (stableFrames >= STABLE_GEOMETRY_FRAMES) break;
+      }
+
+      safeFit();
+    },
+    [safeFit],
+  );
 
   const start = useCallback(
     async (args: {
@@ -458,14 +534,20 @@ export function useTerminalSession(
         setStatus("error");
         return null;
       }
-      // Refit before we start so the PTY opens at the user's actual
-      // viewport size — no flash of resize after the shell prints its
-      // first prompt. safeFit no-ops if the renderer isn't ready yet,
-      // in which case we fall back to defaults and the first
-      // ResizeObserver pulse will round-trip a real terminal_resize.
-      safeFit();
-      const cols = term.cols > 0 ? term.cols : 80;
-      const rows = term.rows > 0 ? term.rows : 24;
+      // Wait until the pane has a stable, plausible geometry before
+      // spawning the shell. If the PTY starts while the action column is
+      // still animating open, zsh/readline can paint for stale columns and
+      // every subsequent prompt redraw lands in the wrong place.
+      await waitForStableGeometry(fitAddon);
+      // The center column animates open over ~180ms (grid-template-columns
+      // transition), so a fit() during that window can measure the host at
+      // a sliver width and report only a column or two. Spawning the shell
+      // that narrow makes its first prompt wrap into a tall smear until the
+      // post-animation refit. Treat an implausibly small measurement as
+      // "not settled yet" and spawn at the standard 80×24 instead; the
+      // ResizeObserver pulse after the animation round-trips the true size.
+      const cols = term.cols >= MIN_START_COLS ? term.cols : 80;
+      const rows = term.rows >= MIN_START_ROWS ? term.rows : 24;
       setStatus("starting");
       setError(null);
       setExitCode(null);
@@ -490,7 +572,7 @@ export function useTerminalSession(
         return null;
       }
     },
-    [wireSessionListeners, safeFit],
+    [wireSessionListeners, waitForStableGeometry],
   );
 
   const attach = useCallback(
