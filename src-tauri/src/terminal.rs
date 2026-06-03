@@ -307,25 +307,29 @@ impl TerminalManager {
             }
             cmd.env(k, v);
         }
-        // Force a UTF-8 locale when the inherited environment has none.
-        // Finder/launchd-launched apps start with no LANG/LC_*, so the
-        // shell (and agent TUIs) fall back to the C locale and miscount
-        // the *display width* of multibyte UTF-8 glyphs — powerline
-        // prompt arrows, box-drawing, etc. The shell's line editor then
-        // computes the wrong cursor column and its redraws overlap and
-        // garble. Respect any locale the user already exported.
-        if std::env::var_os("LC_ALL").is_none()
-            && std::env::var_os("LC_CTYPE").is_none()
-            && std::env::var_os("LANG").is_none()
-        {
-            // macOS accepts the bare `UTF-8` LC_CTYPE (fixes character
-            // handling without forcing a language/region); glibc needs a
-            // real locale name and ships `C.UTF-8` everywhere.
+        // Finder/launchd can start the app with LANG/LC_* unset or set
+        // to empty strings. In that environment shells and line editors
+        // can fall back to the C locale and miscompute cursor columns for
+        // multibyte prompt glyphs. Only fill this in when the user has no
+        // usable locale at all, and let explicit LC_ALL/LC_CTYPE/LANG win.
+        let missing_locale = ["LC_ALL", "LC_CTYPE", "LANG"]
+            .iter()
+            .all(|key| std::env::var_os(key).map_or(true, |value| value.is_empty()));
+        if missing_locale {
             #[cfg(target_os = "macos")]
             cmd.env("LC_CTYPE", "UTF-8");
             #[cfg(all(unix, not(target_os = "macos")))]
             cmd.env("LANG", "C.UTF-8");
         }
+        // The embedded terminal is xterm.js, which is xterm-256color
+        // compatible, so advertise that to the shell. We set it
+        // unconditionally: a Finder/launchd launch inherits no TERM at all
+        // (with TERM unset zsh has no terminfo — it emits a stray `?`
+        // before multibyte prompt glyphs and miscomputes cursor columns,
+        // garbling the line editor), and a launch that inherits TERM from
+        // some other terminal (e.g. `xterm-ghostty`) would describe the
+        // wrong terminal. portable_pty does not set this for us.
+        cmd.env("TERM", "xterm-256color");
 
         let child: Box<dyn Child + Send + Sync> = pair
             .slave
