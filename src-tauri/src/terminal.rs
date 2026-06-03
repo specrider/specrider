@@ -282,7 +282,17 @@ impl TerminalManager {
                 if shell.contains(['\0', '\n', ';', '|', '&', '`', '$']) {
                     return Err("refusing to launch unsafe shell".into());
                 }
-                CommandBuilder::new(shell)
+                let mut builder = CommandBuilder::new(shell);
+                // Spawn as a login shell so the user's profile
+                // (.zprofile / .bash_profile, etc.) runs. When SpecRider
+                // is launched from Finder/launchd rather than a terminal
+                // it inherits the bare launchd PATH; login-shell startup
+                // is what restores the PATH the user expects (Homebrew,
+                // pyenv, asdf, …). PowerShell loads its own profile, so
+                // this is POSIX-only.
+                #[cfg(not(windows))]
+                builder.arg("-l");
+                builder
             }
         };
         cmd.cwd(&cwd);
@@ -297,6 +307,29 @@ impl TerminalManager {
             }
             cmd.env(k, v);
         }
+        // Finder/launchd can start the app with LANG/LC_* unset or set
+        // to empty strings. In that environment shells and line editors
+        // can fall back to the C locale and miscompute cursor columns for
+        // multibyte prompt glyphs. Only fill this in when the user has no
+        // usable locale at all, and let explicit LC_ALL/LC_CTYPE/LANG win.
+        let missing_locale = ["LC_ALL", "LC_CTYPE", "LANG"]
+            .iter()
+            .all(|key| std::env::var_os(key).is_none_or(|value| value.is_empty()));
+        if missing_locale {
+            #[cfg(target_os = "macos")]
+            cmd.env("LC_CTYPE", "UTF-8");
+            #[cfg(all(unix, not(target_os = "macos")))]
+            cmd.env("LANG", "C.UTF-8");
+        }
+        // The embedded terminal is xterm.js, which is xterm-256color
+        // compatible, so advertise that to the shell. We set it
+        // unconditionally: a Finder/launchd launch inherits no TERM at all
+        // (with TERM unset zsh has no terminfo — it emits a stray `?`
+        // before multibyte prompt glyphs and miscomputes cursor columns,
+        // garbling the line editor), and a launch that inherits TERM from
+        // some other terminal (e.g. `xterm-ghostty`) would describe the
+        // wrong terminal. portable_pty does not set this for us.
+        cmd.env("TERM", "xterm-256color");
 
         let child: Box<dyn Child + Send + Sync> = pair
             .slave
