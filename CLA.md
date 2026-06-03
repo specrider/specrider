@@ -11,8 +11,8 @@ ownership of the copyright in your Contributions** — this Agreement only grant
 805 Software a license to them.
 
 By signing this Agreement (for example, by commenting on a pull request as
-instructed by the CLA assistant, per the [_How to sign_](#how-to-sign) section
-below), you accept and agree to the following terms for your present and future
+instructed in the [_How to sign_](#how-to-sign) section below), you accept and
+agree to the following terms for your present and future
 Contributions submitted to 805 Software. Except for the license granted in this
 Agreement, you reserve all right, title, and interest in and to your
 Contributions.
@@ -110,22 +110,32 @@ aware that would make these representations inaccurate in any respect.
 
 ## How to sign
 
-This project uses [CLA assistant](https://cla-assistant.io) (the hosted service
-run by SAP) to collect signatures automatically. When you open your first pull
-request, CLA assistant adds a **CLA status check** and posts a link. To sign:
+This project uses a GitHub Actions CLA check backed by a private repository.
+When you open your first pull request, the check posts a pull request comment
+if your GitHub username does not yet have an Individual CLA signature on file.
+To sign:
 
-1. Click the **Details** link on the CLA status check (or the link in CLA
-   assistant's pull request comment).
-2. Sign in with your GitHub account and review this Agreement.
-3. Click **I agree** to record your signature.
+1. Review this Agreement.
+2. Comment exactly the following on the pull request:
 
-The status check turns green once you've signed. Your signature is recorded so you
-only need to sign once — subsequent pull requests are recognized automatically.
+   ```text
+   I have read and agree to the SpecRider Individual Contributor License Agreement v1.
+   ```
+
+3. Wait for the `license/cla` status check to update. If it does not update,
+   comment `recheck`.
+
+The signature record stores your GitHub username, the CLA version, a hash of
+this Agreement, the signing timestamp, and a link to your pull request comment.
+It does not store your legal name, email address, or employer in this public
+repository. You only need to sign once — subsequent pull requests are recognized
+automatically.
 
 If you are contributing on behalf of a company, you still sign this Individual
-CLA here (it is what the bot checks) **and**, in addition, your employer executes
-the [Corporate Contributor License Agreement](CCLA.md) to secure the company's
-rights. The Corporate CLA supplements — it does not replace — per-person signing.
+CLA here (it is what the merge check enforces) **and**, in addition, your
+employer executes the [Corporate Contributor License Agreement](CCLA.md) to
+secure the company's rights. The Corporate CLA supplements — it does not replace
+— per-person signing.
 
 Signing the CLA does **not** replace the per-commit Developer Certificate of
 Origin (DCO) sign-off. Both are required — see [`CONTRIBUTING.md`](CONTRIBUTING.md).

@@ -10,7 +10,7 @@ in the course of their work.
 
 > **This Agreement is supplemental — it does not replace individual signing.**
 > Each of the Corporation's Designated Employees must still sign the
-> [Individual CLA](CLA.md) through the automated CLA assistant on their first pull
+> [Individual CLA](CLA.md) through the automated CLA workflow on their first pull
 > request (that is the signature the merge check enforces). This Corporate CLA
 > sits on top of those individual signatures to confirm that the Corporation —
 > which may own the IP its employees create — also grants the same rights. This
@@ -125,7 +125,7 @@ to:
 
 The maintainer will confirm receipt and record which GitHub usernames from
 Schedule A are covered. Remember that each listed employee must also sign the
-[Individual CLA](CLA.md) through the bot on their first pull request — the
+[Individual CLA](CLA.md) through the CLA workflow on their first pull request — the
 Corporate CLA does not bypass that check.
 
 ## Signature

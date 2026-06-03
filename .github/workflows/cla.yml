@@ -1,0 +1,159 @@
+name: CLA
+
+# Checks Individual CLA signatures against a private records repository.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+  statuses: write
+
+env:
+  CLA_RECORDS_BRANCH: main
+  CLA_VERSION: individual-v1
+  CLA_SIGNATURES_PATH: signatures/individual-v1.json
+  CLA_STATUS_CONTEXT: license/cla
+  CLA_SIGN_COMMENT: I have read and agree to the SpecRider Individual Contributor License Agreement v1.
+
+jobs:
+  check:
+    name: Check CLA signatures
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: cla-check-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Validate CLA records secrets
+        env:
+          CLA_RECORDS_REPOSITORY: ${{ secrets.CLA_RECORDS_REPOSITORY }}
+          CLA_RECORDS_TOKEN: ${{ secrets.CLA_RECORDS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CLA_RECORDS_REPOSITORY" ]; then
+            echo "::error::CLA_RECORDS_REPOSITORY secret is not configured."
+            exit 1
+          fi
+          if [ -z "$CLA_RECORDS_TOKEN" ]; then
+            echo "::error::CLA_RECORDS_TOKEN secret is not configured."
+            exit 1
+          fi
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: ${{ secrets.CLA_RECORDS_REPOSITORY }}
+          ref: ${{ env.CLA_RECORDS_BRANCH }}
+          path: .cla-records
+          token: ${{ secrets.CLA_RECORDS_TOKEN }}
+          persist-credentials: false
+
+      - name: Check private CLA records
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash .github/scripts/cla-records.sh check
+
+  sign:
+    name: Record CLA signature
+    if: >-
+      github.event_name == 'issue_comment' &&
+      github.event.issue.pull_request != null &&
+      github.event.comment.body == 'I have read and agree to the SpecRider Individual Contributor License Agreement v1.'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: cla-records-write
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Validate CLA records secrets
+        env:
+          CLA_RECORDS_REPOSITORY: ${{ secrets.CLA_RECORDS_REPOSITORY }}
+          CLA_RECORDS_TOKEN: ${{ secrets.CLA_RECORDS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CLA_RECORDS_REPOSITORY" ]; then
+            echo "::error::CLA_RECORDS_REPOSITORY secret is not configured."
+            exit 1
+          fi
+          if [ -z "$CLA_RECORDS_TOKEN" ]; then
+            echo "::error::CLA_RECORDS_TOKEN secret is not configured."
+            exit 1
+          fi
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: ${{ secrets.CLA_RECORDS_REPOSITORY }}
+          ref: ${{ env.CLA_RECORDS_BRANCH }}
+          path: .cla-records
+          token: ${{ secrets.CLA_RECORDS_TOKEN }}
+          persist-credentials: true
+
+      - name: Record signature and recheck PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          COMMENTER: ${{ github.event.comment.user.login }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          COMMENT_URL: ${{ github.event.comment.html_url }}
+        run: bash .github/scripts/cla-records.sh sign
+
+  recheck:
+    name: Recheck CLA signatures
+    if: >-
+      github.event_name == 'issue_comment' &&
+      github.event.issue.pull_request != null &&
+      github.event.comment.body == 'recheck'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: cla-check-${{ github.event.issue.number }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Validate CLA records secrets
+        env:
+          CLA_RECORDS_REPOSITORY: ${{ secrets.CLA_RECORDS_REPOSITORY }}
+          CLA_RECORDS_TOKEN: ${{ secrets.CLA_RECORDS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CLA_RECORDS_REPOSITORY" ]; then
+            echo "::error::CLA_RECORDS_REPOSITORY secret is not configured."
+            exit 1
+          fi
+          if [ -z "$CLA_RECORDS_TOKEN" ]; then
+            echo "::error::CLA_RECORDS_TOKEN secret is not configured."
+            exit 1
+          fi
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: ${{ secrets.CLA_RECORDS_REPOSITORY }}
+          ref: ${{ env.CLA_RECORDS_BRANCH }}
+          path: .cla-records
+          token: ${{ secrets.CLA_RECORDS_TOKEN }}
+          persist-credentials: false
+
+      - name: Recheck private CLA records
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+        run: bash .github/scripts/cla-records.sh check

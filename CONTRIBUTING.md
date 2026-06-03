@@ -66,7 +66,7 @@ In addition to the per-commit DCO sign-off above, contributors must sign the pro
 - **Everyone** signs the [Individual CLA](CLA.md) — this is the signature the merge check enforces.
 - **Contributing on behalf of an employer?** Your company *also* signs the [Corporate CLA](CCLA.md) and emails it in (see that file for the private submission process). The Corporate CLA is supplemental: it secures your employer's rights but does not replace your individual signature here.
 
-Individual signing is automated via [CLA assistant](https://cla-assistant.io): when you open your first PR, it adds a CLA status check. Click the check's **Details** link (or the link the bot posts), sign in with GitHub, and click **I agree**. You only sign once; later PRs are recognized automatically. The DCO sign-off and the CLA are both required — the DCO certifies origin per commit, the CLA grants the inbound license.
+Individual signing is handled by the repository's CLA workflow: when you open your first PR, it adds a `license/cla` status check and comments with the exact signing phrase if your GitHub username is not already on file. Review [CLA.md](CLA.md), comment the signing phrase on the PR, and the workflow records your signature in a private repository. You only sign once; later PRs are recognized automatically. The DCO sign-off and the CLA are both required — the DCO certifies origin per commit, the CLA grants the inbound license.
 
 ## Pull request checklist
 
@@ -75,7 +75,7 @@ Individual signing is automated via [CLA assistant](https://cla-assistant.io): w
 - [ ] `pnpm check` clean
 - [ ] `(cd src-tauri && cargo check)` clean
 - [ ] Every commit signed with `-s` (DCO)
-- [ ] CLA signed (first-time contributors — the bot will prompt you)
+- [ ] CLA signed (first-time contributors — the workflow will prompt you)
 
 ## Filing issues
 
