@@ -56,8 +56,26 @@ use config::{AppConfig, ConfigState};
 use state::WindowsState;
 use terminal::TerminalManager;
 
+fn env_var_missing_or_empty(key: &str) -> bool {
+    std::env::var_os(key).is_none_or(|value| value.is_empty())
+}
+
+fn ensure_utf8_character_locale() {
+    if ["LC_ALL", "LC_CTYPE", "LANG"]
+        .iter()
+        .all(|key| env_var_missing_or_empty(key))
+    {
+        #[cfg(target_os = "macos")]
+        std::env::set_var("LC_CTYPE", "UTF-8");
+        #[cfg(all(unix, not(target_os = "macos")))]
+        std::env::set_var("LANG", "C.UTF-8");
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    ensure_utf8_character_locale();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
