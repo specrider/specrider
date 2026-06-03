@@ -59,7 +59,14 @@ git config format.signoff true
 
 Unsigned commits will be rejected by the DCO check.
 
-Contributions come in under the project's inbound license, GPL-3.0-or-later (inbound = outbound). There's no CLA — the DCO sign-off is all that's required.
+## Contributor License Agreement (CLA)
+
+In addition to the per-commit DCO sign-off above, contributors must sign the project's Contributor License Agreement once before their first pull request can be merged. The CLA lets 805 Software LLC maintain SpecRider as GPL-3.0-or-later software while retaining the flexibility to offer it under other terms (for example, a commercial or hosted edition). **You keep the copyright to your contributions** — the CLA is a license grant, not an assignment.
+
+- **Everyone** signs the [Individual CLA](CLA.md) — this is the signature the merge check enforces.
+- **Contributing on behalf of an employer?** Your company *also* signs the [Corporate CLA](CCLA.md) and emails it in (see that file for the private submission process). The Corporate CLA is supplemental: it secures your employer's rights but does not replace your individual signature here.
+
+Individual signing is handled by the repository's CLA workflow: when you open your first PR, it adds a `license/cla` status check and comments with the exact signing phrase if your GitHub username is not already on file. Review [CLA.md](CLA.md), comment the signing phrase on the PR, and the workflow records your signature in a private repository. You only sign once; later PRs are recognized automatically. The DCO sign-off and the CLA are both required — the DCO certifies origin per commit, the CLA grants the inbound license.
 
 ## Pull request checklist
 
@@ -67,7 +74,8 @@ Contributions come in under the project's inbound license, GPL-3.0-or-later (inb
 - [ ] Tests added/updated and passing locally
 - [ ] `pnpm check` clean
 - [ ] `(cd src-tauri && cargo check)` clean
-- [ ] Every commit signed with `-s`
+- [ ] Every commit signed with `-s` (DCO)
+- [ ] CLA signed (first-time contributors — the workflow will prompt you)
 
 ## Filing issues
 
