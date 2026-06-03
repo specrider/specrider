@@ -115,7 +115,7 @@ When you open your first pull request, the check posts a pull request comment
 if your GitHub username does not yet have an Individual CLA signature on file.
 To sign:
 
-1. Review this Agreement.
+1. Review this Agreement
 2. Comment exactly the following on the pull request:
 
    ```text
@@ -123,7 +123,7 @@ To sign:
    ```
 
 3. Wait for the `license/cla` status check to update. If it does not update,
-   comment `recheck`.
+   comment `recheck`
 
 The signature record stores your GitHub username, the CLA version, a hash of
 this Agreement, the signing timestamp, and a link to your pull request comment.
