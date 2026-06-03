@@ -17,7 +17,6 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { FitAddon } from "@xterm/addon-fit";
 import { LigaturesAddon } from "@xterm/addon-ligatures";
 import { WebLinksAddon } from "@xterm/addon-web-links";
-import { WebglAddon } from "@xterm/addon-webgl";
 import { Terminal } from "@xterm/xterm";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "@xterm/xterm/css/xterm.css";
@@ -99,9 +98,8 @@ const START_GEOMETRY_TIMEOUT_MS = 700;
 const STABLE_GEOMETRY_FRAMES = 2;
 
 /** Resolves a CSS color value (oklch, hsl, named, etc.) to a string
- *  xterm.js can parse — the WebGL renderer is strict about this and
- *  some color spaces (oklch in particular) only round-trip cleanly via
- *  the browser's own normalization. */
+ *  xterm.js can parse — some color spaces (oklch in particular) only
+ *  round-trip cleanly via the browser's own normalization. */
 function resolveColor(cssValue: string, fallback: string): string {
   const v = cssValue.trim();
   if (!v) return fallback;
@@ -215,12 +213,6 @@ export function useTerminalSession(
     const fit = new FitAddon();
     term.loadAddon(fit);
     term.open(containerRef.current);
-    try {
-      const webgl = new WebglAddon();
-      term.loadAddon(webgl);
-    } catch {
-      // WebGL fallback — xterm.js falls back to canvas automatically.
-    }
     // WebLinksAddon underlines URLs and routes clicks through Tauri's
     // opener plugin so they open in the user's default browser rather
     // than navigating the webview.
@@ -251,8 +243,8 @@ export function useTerminalSession(
     });
     // Ligatures addon — opt-in via the existing Settings → Typography
     // "Code ligatures" toggle. Reads the body class that useApplyCss
-    // keeps in sync. Requires the WebGL renderer; harmless if WebGL
-    // failed and we fell back to canvas (the addon just no-ops).
+    // keeps in sync. The addon is best-effort and no-ops when the
+    // active xterm renderer cannot support it.
     if (document.body.classList.contains("mono-ligatures")) {
       try {
         term.loadAddon(new LigaturesAddon());
