@@ -38,7 +38,6 @@ export const GOOGLE_FONTS: FontEntry[] = [
   { family: "Domine", category: "serif" },
   { family: "Fraunces", category: "serif" },
   { family: "Literata", category: "serif" },
-  { family: "Junicode", category: "serif" },
   { family: "Roboto Serif", category: "serif" },
   { family: "Trirong", category: "serif" },
   { family: "Marcellus", category: "serif" },
@@ -120,7 +119,7 @@ export const GOOGLE_FONTS: FontEntry[] = [
   // ─── Display ───────────────────────────────────────────────────
   { family: "Playfair Display", category: "display" },
   { family: "Bricolage Grotesque", category: "display" },
-  { family: "Inter Display", category: "display" },
+  { family: "DM Serif Display", category: "display" },
   { family: "Big Shoulders Display", category: "display" },
   { family: "Old Standard TT", category: "display" },
 ];
