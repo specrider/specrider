@@ -57,7 +57,7 @@ use state::WindowsState;
 use terminal::TerminalManager;
 
 fn env_var_missing_or_empty(key: &str) -> bool {
-    std::env::var_os(key).map_or(true, |value| value.is_empty())
+    std::env::var_os(key).is_none_or(|value| value.is_empty())
 }
 
 fn ensure_utf8_character_locale() {

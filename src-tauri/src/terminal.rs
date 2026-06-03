@@ -314,7 +314,7 @@ impl TerminalManager {
         // usable locale at all, and let explicit LC_ALL/LC_CTYPE/LANG win.
         let missing_locale = ["LC_ALL", "LC_CTYPE", "LANG"]
             .iter()
-            .all(|key| std::env::var_os(key).map_or(true, |value| value.is_empty()));
+            .all(|key| std::env::var_os(key).is_none_or(|value| value.is_empty()));
         if missing_locale {
             #[cfg(target_os = "macos")]
             cmd.env("LC_CTYPE", "UTF-8");
