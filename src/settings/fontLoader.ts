@@ -32,11 +32,7 @@ export function loadGoogleFont(family: string): void {
       }
       // Not cached — fall back to a live <link> to Google Fonts so
       // the user gets the font now, then cache for next time.
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = `https://fonts.googleapis.com/css2?family=${encodeFamily(family)}:wght@400;500;600;700&display=swap`;
-      placeholder.replaceWith(link);
-      link.id = id;
+      injectLiveLink(family, id, placeholder);
       // Background-cache so subsequent launches go offline.
       void cacheFont(family).catch((e) =>
         console.warn(`cacheFont(${family}) failed:`, e),
@@ -45,12 +41,30 @@ export function loadGoogleFont(family: string): void {
     .catch(() => {
       // readCachedFont errored (no plansRoot, IPC issue, etc) — fall
       // back to the live link path.
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = `https://fonts.googleapis.com/css2?family=${encodeFamily(family)}:wght@400;500;600;700&display=swap`;
-      placeholder.replaceWith(link);
-      link.id = id;
+      injectLiveLink(family, id, placeholder);
     });
+}
+
+/** Swap `placeholder` for a live Google Fonts `<link>`. If the request
+ *  fails (e.g. an unknown family name returns 400), drop the dead
+ *  element so it neither lingers in the DOM nor permanently reserves
+ *  its id — a later call can then retry the family. A stale errored
+ *  stylesheet has also been observed to trigger a repaint glitch in the
+ *  transparent macOS window, so cleaning it up is belt-and-suspenders. */
+function injectLiveLink(
+  family: string,
+  id: string,
+  placeholder: HTMLElement,
+): void {
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${encodeFamily(family)}:wght@400;500;600;700&display=swap`;
+  link.id = id;
+  link.onerror = () => {
+    console.warn(`loadGoogleFont(${family}) failed to load`);
+    link.remove();
+  };
+  placeholder.replaceWith(link);
 }
 
 function encodeFamily(family: string): string {
