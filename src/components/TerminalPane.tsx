@@ -7,7 +7,8 @@
 // session's agent badge + cwd + agent picker + Close, and the xterm
 // host itself. Keystrokes go through xterm's own input path; we
 // intercept Cmd+C (selection-aware copy, SIGINT fallback) and paste
-// paths (term.paste so bracketed-paste works).
+// paths (term.paste so bracketed-paste works), plus modified Enter for
+// multiline prompts.
 
 import { readText as readClipboardText } from "@tauri-apps/plugin-clipboard-manager";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -17,6 +18,7 @@ import { type AgentKind, terminalSetCwd, terminalWrite } from "../tauri/api";
 import { Icon } from "./icons";
 
 const FIT_DEBOUNCE_MS = 50;
+const PROMPT_MULTILINE_ENTER = "\x1b\r";
 
 export interface TerminalPaneProps {
   open: boolean;
@@ -151,8 +153,8 @@ function TerminalPaneInner(props: TerminalPaneProps) {
   // the surrounding UI (xterm captures every keystroke including Tab,
   // so this chord is the only deterministic way out for keyboard
   // users), Cmd+C (selection-aware copy, SIGINT fallback when no
-  // selection), and Cmd+V (route through term.paste so
-  // bracketed-paste mode works correctly).
+  // selection), Cmd+V (route through term.paste so bracketed-paste
+  // mode works correctly), and Shift/Ctrl+Enter (multiline prompt).
   const onHostKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       // ⌘⇧Esc / Ctrl+Shift+Esc — escape from the terminal. We can't
@@ -253,6 +255,22 @@ function TerminalPaneInner(props: TerminalPaneProps) {
     };
 
     const onKeyDownCapture = (e: KeyboardEvent) => {
+      if (
+        e.key === "Enter" &&
+        (e.shiftKey || e.ctrlKey) &&
+        !e.altKey &&
+        !e.metaKey
+      ) {
+        const term = session.term;
+        const sessionId = session.session?.id;
+        if (!term || !sessionId) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        term.focus();
+        void terminalWrite(sessionId, PROMPT_MULTILINE_ENTER);
+        return;
+      }
       if (!(e.metaKey || e.ctrlKey)) return;
       if (e.key.toLowerCase() !== "v") return;
       e.preventDefault();
