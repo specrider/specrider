@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Settings } from "./Settings";
@@ -31,6 +37,8 @@ const updaterMocks = vi.hoisted(() => ({
 
 const apiMocks = vi.hoisted(() => ({
   diagnosticsSnapshot: vi.fn(),
+  getSettingsWorkspaceRoot: vi.fn(),
+  onSettingsWorkspaceChanged: vi.fn(),
   readWorkspaceConfigSource: vi.fn(),
   writeWorkspaceConfigSource: vi.fn(),
 }));
@@ -78,6 +86,8 @@ vi.mock("../lib/updater", () => ({
 
 vi.mock("../tauri/api", () => ({
   diagnosticsSnapshot: apiMocks.diagnosticsSnapshot,
+  getSettingsWorkspaceRoot: apiMocks.getSettingsWorkspaceRoot,
+  onSettingsWorkspaceChanged: apiMocks.onSettingsWorkspaceChanged,
   readWorkspaceConfigSource: apiMocks.readWorkspaceConfigSource,
   writeWorkspaceConfigSource: apiMocks.writeWorkspaceConfigSource,
 }));
@@ -111,7 +121,6 @@ function diagnosticsSnapshot(markdown = "## Diagnostics") {
 
 describe("Settings", () => {
   beforeEach(() => {
-    localStorage.clear();
     for (const mock of [
       ...Object.values(coreMocks),
       ...Object.values(clipboardMocks),
@@ -156,6 +165,8 @@ describe("Settings", () => {
       error: null,
     });
     apiMocks.diagnosticsSnapshot.mockResolvedValue(diagnosticsSnapshot());
+    apiMocks.getSettingsWorkspaceRoot.mockResolvedValue(null);
+    apiMocks.onSettingsWorkspaceChanged.mockResolvedValue(vi.fn());
     apiMocks.readWorkspaceConfigSource.mockResolvedValue({
       exists: false,
       path: "/plans/.specrider/workspace.json",
@@ -252,9 +263,9 @@ describe("Settings", () => {
     expect(screen.getByRole("status").textContent).toContain("Copied");
   });
 
-  it("loads and saves workspace config JSON from the active workspace", async () => {
+  it("loads and saves workspace config JSON for the workspace that opened Settings", async () => {
     const user = userEvent.setup();
-    localStorage.setItem("specrider.activePlansRoot.v1", "/plans");
+    apiMocks.getSettingsWorkspaceRoot.mockResolvedValue("/plans");
     render(<Settings />);
 
     await user.click(screen.getByRole("tab", { name: "Workspace" }));
@@ -272,6 +283,30 @@ describe("Settings", () => {
         expect.stringContaining('"repos": {}'),
         "/plans",
       ),
+    );
+  });
+
+  it("re-targets the workspace section when the bound workspace changes", async () => {
+    const user = userEvent.setup();
+    let emitWorkspaceChange: (root: string | null) => void = () => {};
+    apiMocks.getSettingsWorkspaceRoot.mockResolvedValue("/plans");
+    apiMocks.onSettingsWorkspaceChanged.mockImplementation(
+      (handler: (root: string | null) => void) => {
+        emitWorkspaceChange = handler;
+        return Promise.resolve(vi.fn());
+      },
+    );
+    render(<Settings />);
+
+    await user.click(screen.getByRole("tab", { name: "Workspace" }));
+    await waitFor(() =>
+      expect(apiMocks.readWorkspaceConfigSource).toHaveBeenCalledWith("/plans"),
+    );
+
+    act(() => emitWorkspaceChange("/other"));
+
+    await waitFor(() =>
+      expect(apiMocks.readWorkspaceConfigSource).toHaveBeenCalledWith("/other"),
     );
   });
 });

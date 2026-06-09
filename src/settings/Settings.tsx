@@ -20,7 +20,12 @@ import {
   supportsUpdater,
   useUpdaterState,
 } from "../lib/updater";
-import { type DiagnosticsSnapshot, diagnosticsSnapshot } from "../tauri/api";
+import {
+  type DiagnosticsSnapshot,
+  diagnosticsSnapshot,
+  getSettingsWorkspaceRoot,
+  onSettingsWorkspaceChanged,
+} from "../tauri/api";
 import { useApplyCss } from "./applyCss";
 import { loadGoogleFont } from "./fontLoader";
 import { type FontCategory, GOOGLE_FONTS } from "./google-fonts";
@@ -42,7 +47,6 @@ const SECTIONS = [
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
-const ACTIVE_PLANS_ROOT_KEY = "specrider.activePlansRoot.v1";
 
 interface SectionProps {
   s: ResolvedSettings;
@@ -635,18 +639,25 @@ function GitSection({ s, update, reset }: SectionProps) {
 }
 
 function WorkspaceSection() {
-  const [plansRoot, setPlansRoot] = useState<string | null>(() =>
-    readActivePlansRoot(),
-  );
+  const [plansRoot, setPlansRoot] = useState<string | null>(null);
 
   useEffect(() => {
-    const onStorage = (event: StorageEvent) => {
-      if (event.key === ACTIVE_PLANS_ROOT_KEY) {
-        setPlansRoot(event.newValue);
-      }
+    let cancelled = false;
+    const normalize = (root: string | null) => (root?.trim() ? root : null);
+    void getSettingsWorkspaceRoot()
+      .then((root) => {
+        if (!cancelled) setPlansRoot(normalize(root));
+      })
+      .catch(() => {
+        /* command unavailable — keep the empty state */
+      });
+    const unlisten = onSettingsWorkspaceChanged((root) => {
+      if (!cancelled) setPlansRoot(normalize(root));
+    });
+    return () => {
+      cancelled = true;
+      void unlisten.then((fn) => fn());
     };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   return (
@@ -664,15 +675,6 @@ function WorkspaceSection() {
 function WorkspaceConfigField({ plansRoot }: { plansRoot: string | null }) {
   const { controlId } = useFieldIds();
   return <WorkspaceConfigEditor plansRoot={plansRoot} editorId={controlId} />;
-}
-
-function readActivePlansRoot(): string | null {
-  try {
-    const root = localStorage.getItem(ACTIVE_PLANS_ROOT_KEY);
-    return root?.trim() ? root : null;
-  } catch {
-    return null;
-  }
 }
 
 function TextInput({

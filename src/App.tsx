@@ -103,7 +103,6 @@ const TerminalSpike = lazy(() =>
 );
 
 const EMPTY_CHANGED_PLANS: Map<string, ChangedPlan> = new Map();
-const ACTIVE_PLANS_ROOT_KEY = "specrider.activePlansRoot.v1";
 
 interface NavEntry {
   planId: string;
@@ -241,18 +240,6 @@ function App() {
     planTitleSource: settings.planTitleSource,
     settingsLoaded,
   });
-
-  useEffect(() => {
-    try {
-      if (plansRoot) {
-        localStorage.setItem(ACTIVE_PLANS_ROOT_KEY, plansRoot);
-      } else if (localStorage.getItem(ACTIVE_PLANS_ROOT_KEY)) {
-        localStorage.removeItem(ACTIVE_PLANS_ROOT_KEY);
-      }
-    } catch {
-      /* localStorage unavailable — settings can fall back to empty state. */
-    }
-  }, [plansRoot]);
 
   // Browser-style navigation history. Cross-plan navigations
   // (link clicks, document-row clicks) push the current entry onto `back`
