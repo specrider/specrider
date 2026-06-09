@@ -32,6 +32,23 @@ pub struct WindowsState {
     inner: Mutex<HashMap<String, Arc<WindowState>>>,
 }
 
+/// Which workspace window the Settings window is bound to. Recorded
+/// from the focused window when the Settings… menu action fires, so
+/// the (singleton) Settings window shows the workspace config of the
+/// window that opened it rather than whichever workspace happened to
+/// write a global "active" marker last.
+pub struct SettingsContext {
+    pub source_label: Mutex<Option<String>>,
+}
+
+impl SettingsContext {
+    pub fn new() -> Self {
+        Self {
+            source_label: Mutex::new(None),
+        }
+    }
+}
+
 impl WindowsState {
     pub fn new() -> Self {
         Self {

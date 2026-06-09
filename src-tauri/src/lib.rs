@@ -53,7 +53,7 @@ const TRAFFIC_LIGHT_Y: f64 = 22.0;
 
 use commands::AnalyzeCache;
 use config::{AppConfig, ConfigState};
-use state::WindowsState;
+use state::{SettingsContext, WindowsState};
 use terminal::TerminalManager;
 
 fn env_var_missing_or_empty(key: &str) -> bool {
@@ -185,6 +185,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::get_plans_root,
             commands::set_plans_root,
+            commands::get_settings_workspace_root,
             commands::set_window_title,
             commands::open_single_file,
             commands::export_with_dialog,
@@ -344,6 +345,7 @@ pub fn run() {
 
             app.manage(ConfigState(Mutex::new(cfg)));
             app.manage(windows_state);
+            app.manage(SettingsContext::new());
             app.manage(AnalyzeCache::new());
             app.manage(git_diff::DiffCache::new());
             app.manage(git_diff::BlameCache::new());
@@ -413,6 +415,25 @@ pub fn run() {
             // Refresh the Window submenu so the closing window drops out
             // of the dynamic switcher list.
             rebuild_menu(app);
+
+            // If Settings was bound to the closing workspace window, drop
+            // the binding so it falls back to the empty state instead of
+            // editing config for a window that no longer exists.
+            let ctx: tauri::State<'_, SettingsContext> = app.state();
+            let was_bound = {
+                let mut source = ctx.source_label.lock().unwrap();
+                if source.as_deref() == Some(closing_label) {
+                    *source = None;
+                    true
+                } else {
+                    false
+                }
+            };
+            if was_bound {
+                if let Some(settings_win) = app.get_webview_window("settings") {
+                    let _ = settings_win.emit("settings-workspace-changed", None::<String>);
+                }
+            }
 
             // Drop the closed window from the persisted config so it
             // doesn't get auto-restored on next launch. Only windows
@@ -1073,8 +1094,23 @@ fn reveal_plans_folder(app: tauri::AppHandle) {
 
 /// Open (or focus) the Settings window. Settings windows aren't tracked
 /// in `AppConfig.windows` — they're transient utility windows.
+///
+/// The window is bound to the workspace window that was focused when the
+/// menu action fired: its label is recorded in `SettingsContext` so the
+/// Workspace section shows that window's config. Reopening Settings from
+/// a different workspace window re-binds and notifies the live window;
+/// invoking it while Settings itself has focus keeps the current binding.
 fn open_settings_window(app: tauri::AppHandle) {
+    let source = focused_window_label(&app);
+    if source != "settings" {
+        let ctx: tauri::State<'_, SettingsContext> = app.state();
+        *ctx.source_label.lock().unwrap() = Some(source);
+    }
     if let Some(existing) = app.get_webview_window("settings") {
+        let _ = existing.emit(
+            "settings-workspace-changed",
+            commands::settings_workspace_root(&app),
+        );
         let _ = existing.show();
         let _ = existing.set_focus();
         let _ = existing.unminimize();

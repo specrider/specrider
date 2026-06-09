@@ -34,6 +34,24 @@ export async function setWindowTitle(title: string): Promise<void> {
   await invoke("set_window_title", { title });
 }
 
+/** Plans root of the workspace window the Settings window is bound to —
+ *  the window that was focused when Settings was opened. `null` when no
+ *  workspace window is bound or it has no folder chosen yet. */
+export async function getSettingsWorkspaceRoot(): Promise<string | null> {
+  return await invoke<string | null>("get_settings_workspace_root");
+}
+
+/** Fired at the Settings window when its bound workspace changes —
+ *  Settings reopened from another window, the bound window's root
+ *  moved, or the bound window closed (payload `null`). */
+export function onSettingsWorkspaceChanged(
+  handler: (root: string | null) => void,
+): Promise<UnlistenFn> {
+  return listen<string | null>("settings-workspace-changed", (event) =>
+    handler(event.payload ?? null),
+  );
+}
+
 /** Opens a native folder picker; sets the plans root to whatever the user chooses.
  *  Returns the chosen path, or `null` if the dialog was cancelled. */
 export async function pickPlansRoot(): Promise<string | null> {

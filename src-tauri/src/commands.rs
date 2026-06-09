@@ -10,7 +10,7 @@ use walkdir::WalkDir;
 
 use crate::app_icon;
 use crate::config::{AppSettings, ConfigState, DefaultTrustPolicy};
-use crate::state::WindowsState;
+use crate::state::{SettingsContext, WindowsState};
 
 /// Hard ceiling on `WalkDir` recursion. Plans repos rarely nest more
 /// than a handful of levels; this protects against pathological deep
@@ -85,10 +85,45 @@ pub fn apply_plans_root(app: &AppHandle, window_label: &str, path: PathBuf) -> R
     let _ = app.emit_to(
         EventTarget::webview_window(window_label),
         "plans-root-changed",
-        path_str,
+        path_str.clone(),
     );
+
+    // Keep an open Settings window in sync when the workspace it is
+    // bound to moves to a different root.
+    let bound = {
+        let ctx: State<'_, SettingsContext> = app.state();
+        let source = ctx.source_label.lock().unwrap();
+        source.as_deref() == Some(window_label)
+    };
+    if bound {
+        if let Some(settings_win) = app.get_webview_window("settings") {
+            let _ = settings_win.emit("settings-workspace-changed", Some(path_str));
+        }
+    }
+
     crate::rebuild_menu(app);
     Ok(())
+}
+
+/// Resolve the plans root of the workspace window the Settings window
+/// is bound to (see `SettingsContext`). `None` when Settings was opened
+/// without a workspace window in focus, or the bound window has no root
+/// chosen yet.
+pub fn settings_workspace_root(app: &AppHandle) -> Option<String> {
+    let label = {
+        let ctx: State<'_, SettingsContext> = app.state();
+        let source = ctx.source_label.lock().unwrap();
+        source.clone()
+    }?;
+    let windows: State<'_, WindowsState> = app.state();
+    let ws = windows.get_or_create(&label);
+    let root = ws.plans_root.lock().unwrap();
+    root.as_ref().map(|p| p.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+pub fn get_settings_workspace_root(app: AppHandle) -> Option<String> {
+    settings_workspace_root(&app)
 }
 
 /// Variant of `apply_plans_root` that also primes the per-window
