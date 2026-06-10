@@ -261,6 +261,9 @@ export function useTerminalSession(
     // consuming component will redo the fit once the host actually
     // settles.
     requestAnimationFrame(() => {
+      // Bail if this Terminal was already torn down (StrictMode's
+      // mount→unmount→remount runs the cleanup before this frame fires).
+      if (termRef.current !== term) return;
       if (
         containerRef.current &&
         containerRef.current.clientWidth > 0 &&
@@ -421,8 +424,16 @@ export function useTerminalSession(
     void Promise.all([
       onTerminalOutput((e: TerminalOutputEvent) => {
         if (e.sessionId !== sessionId) return;
+        // Resolve the terminal at event time, not wire time: PTY chunks
+        // keep streaming while the mount effect disposes and recreates
+        // the Terminal (StrictMode/HMR remounts, font/theme changes),
+        // and a write into a disposed Terminal schedules render work
+        // against a torn-down renderer — xterm then throws
+        // `_renderer.value.dimensions` TypeErrors from its rAF loop.
+        const liveTerm = termRef.current;
+        if (!liveTerm) return;
         const bytes = base64ToBytes(e.chunkB64);
-        term.write(bytes);
+        liveTerm.write(bytes);
       }),
       onTerminalExited((e: TerminalExitedEvent) => {
         if (e.sessionId !== sessionId) return;
@@ -531,6 +542,16 @@ export function useTerminalSession(
       // still animating open, zsh/readline can paint for stale columns and
       // every subsequent prompt redraw lands in the wrong place.
       await waitForStableGeometry(fitAddon);
+      // The await can outlive `term`: the mount effect disposes and
+      // recreates the Terminal on StrictMode/HMR remounts and settings
+      // changes. Measure (and later focus) the live instance instead of
+      // the captured one — touching a disposed Terminal throws from deep
+      // inside xterm's render loop.
+      const liveTerm = termRef.current;
+      if (!liveTerm) {
+        setStatus("idle");
+        return null;
+      }
       // The center column animates open over ~180ms (grid-template-columns
       // transition), so a fit() during that window can measure the host at
       // a sliver width and report only a column or two. Spawning the shell
@@ -538,8 +559,8 @@ export function useTerminalSession(
       // post-animation refit. Treat an implausibly small measurement as
       // "not settled yet" and spawn at the standard 80×24 instead; the
       // ResizeObserver pulse after the animation round-trips the true size.
-      const cols = term.cols >= MIN_START_COLS ? term.cols : 80;
-      const rows = term.rows >= MIN_START_ROWS ? term.rows : 24;
+      const cols = liveTerm.cols >= MIN_START_COLS ? liveTerm.cols : 80;
+      const rows = liveTerm.rows >= MIN_START_ROWS ? liveTerm.rows : 24;
       setStatus("starting");
       setError(null);
       setExitCode(null);
@@ -555,7 +576,7 @@ export function useTerminalSession(
         setSession(meta);
         wireSessionListeners(meta.id);
         setStatus("running");
-        term.focus();
+        termRef.current?.focus();
         return meta;
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
@@ -596,17 +617,26 @@ export function useTerminalSession(
         setSession(meta);
         wireSessionListeners(meta.id);
         const replayed = await terminalReplay(meta.id);
+        // The awaits above can outlive `term` (StrictMode/HMR remounts,
+        // settings-driven recreation in the mount effect). Write into
+        // the live instance — a disposed Terminal throws from xterm's
+        // render loop on the next queued refresh.
+        const liveTerm = termRef.current;
+        if (!liveTerm) {
+          setStatus("idle");
+          return null;
+        }
         if (replayed.byteLength > 0) {
-          term.write(replayed);
+          liveTerm.write(replayed);
         }
         // Re-sync size in case the host's container changed dimensions
         // while the webview was detached.
         safeFit();
-        if (term.cols > 0 && term.rows > 0) {
-          await terminalResize(meta.id, term.cols, term.rows);
+        if (liveTerm.cols > 0 && liveTerm.rows > 0) {
+          await terminalResize(meta.id, liveTerm.cols, liveTerm.rows);
         }
         setStatus("running");
-        term.focus();
+        termRef.current?.focus();
         return meta;
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
