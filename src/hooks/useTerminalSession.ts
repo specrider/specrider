@@ -189,26 +189,39 @@ export function useTerminalSession(
   // is the fallback in TerminalPane until this updates.
   const [cwd, setCwd] = useState<string | null>(null);
 
-  // Mount the xterm Terminal once. Theme/font option updates happen
-  // separately so we don't need to dispose+recreate on a settings tweak.
+  // Latest options, readable from the mount effect without retriggering
+  // it. Settings always arrive async after first mount, so option deps
+  // on the mount effect would dispose+recreate the Terminal on every
+  // app load — and a recreate cycle can leave queued render work
+  // pointing at the torn-down renderer (xterm's refresh debouncer has
+  // no disposed guard), which throws `_renderer.value.dimensions`
+  // TypeErrors from its rAF loop. Every option here is dynamically
+  // applicable via `term.options`, so the effect below handles changes.
+  const optsRef = useRef(opts);
+  optsRef.current = opts;
+
+  // Mount the xterm Terminal exactly once per component lifetime.
+  // Theme/font option updates apply through `term.options` so we never
+  // dispose+recreate on a settings change.
   useEffect(() => {
     if (!containerRef.current) return;
+    const initial = optsRef.current;
     const term = new Terminal({
-      fontFamily: opts.fontFamily ?? DEFAULT_FONT,
-      fontSize: opts.fontSize ?? 13,
-      lineHeight: opts.lineHeight ?? 1.2,
-      letterSpacing: opts.letterSpacing ?? 0,
-      scrollback: opts.scrollback ?? 5000,
+      fontFamily: initial.fontFamily ?? DEFAULT_FONT,
+      fontSize: initial.fontSize ?? 13,
+      lineHeight: initial.lineHeight ?? 1.2,
+      letterSpacing: initial.letterSpacing ?? 0,
+      scrollback: initial.scrollback ?? 5000,
       cursorBlink: true,
       cursorStyle: "block",
-      theme: opts.theme ?? readThemeFromCss(),
+      theme: initial.theme ?? readThemeFromCss(),
       // Auto-bump any fg/bg combo below WCAG AA — fixes dimmed text
       // (SGR \e[2m, used heavily by Claude Code for muted lines) fading
       // into near-white on light themes.
       minimumContrastRatio: 4.5,
       // ConPTY/Windows tweak — harmless on macOS/Linux.
       allowProposedApi: true,
-      screenReaderMode: opts.screenReaderMode ?? false,
+      screenReaderMode: initial.screenReaderMode ?? false,
     });
     const fit = new FitAddon();
     term.loadAddon(fit);
@@ -305,16 +318,7 @@ export function useTerminalSession(
       // docstring. The Rust session keeps running so a remount can
       // reattach.
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    opts.letterSpacing,
-    opts.scrollback,
-    opts.fontSize,
-    opts.theme,
-    opts.screenReaderMode,
-    opts.lineHeight,
-    opts.fontFamily,
-  ]);
+  }, []);
 
   /** Wrap every external fit() call so a not-yet-rendered terminal
    *  doesn't throw `_renderer.value.dimensions is undefined`. Also
@@ -334,15 +338,18 @@ export function useTerminalSession(
     // it (overflow:hidden), and the ResizeObserver fires again once the
     // animation settles. A real terminal pane is always far wider than
     // this floor, so legitimately-sized panes are never starved.
-    const proposed = fitAddon.proposeDimensions();
-    if (
-      !proposed ||
-      proposed.cols < MIN_START_COLS ||
-      proposed.rows < MIN_START_ROWS
-    ) {
-      return false;
-    }
     try {
+      // proposeDimensions also reads the render service's dimensions
+      // getter, which throws while the renderer isn't attached yet —
+      // keep it inside the try alongside fit().
+      const proposed = fitAddon.proposeDimensions();
+      if (
+        !proposed ||
+        proposed.cols < MIN_START_COLS ||
+        proposed.rows < MIN_START_ROWS
+      ) {
+        return false;
+      }
       fitAddon.fit();
       return true;
     } catch {
@@ -362,6 +369,8 @@ export function useTerminalSession(
       term.options.letterSpacing = opts.letterSpacing;
     if (opts.scrollback) term.options.scrollback = opts.scrollback;
     if (opts.theme) term.options.theme = opts.theme;
+    if (opts.screenReaderMode != null)
+      term.options.screenReaderMode = opts.screenReaderMode;
     safeFit();
   }, [
     opts.fontFamily,
@@ -370,6 +379,7 @@ export function useTerminalSession(
     opts.letterSpacing,
     opts.scrollback,
     opts.theme,
+    opts.screenReaderMode,
     safeFit,
   ]);
 
@@ -379,9 +389,12 @@ export function useTerminalSession(
   // caller explicitly provides one.
   useEffect(() => {
     if (opts.theme) return;
-    const term = termRef.current;
-    if (!term) return;
+    if (!termRef.current) return;
+    // Resolve the terminal at apply time (not capture time) so the
+    // observer and the queued microtask never touch a disposed instance.
     const apply = () => {
+      const term = termRef.current;
+      if (!term) return;
       term.options.theme = readThemeFromCss();
     };
     // Initial sync in case the CSS-vars resolution ran before the
