@@ -1,11 +1,31 @@
+import { createRequire } from "node:module";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+
+const require = createRequire(import.meta.url);
 
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [react()],
+
+  // micromark (via remark-parse) pulls in decode-named-character-reference,
+  // whose `browser` build calls document.createElement at module scope.
+  // Vite applies the browser export condition to Web Worker bundles too, so
+  // the markdown parser worker dies on load ("Can't find variable: document")
+  // and every large-doc parse silently falls back to the main thread. Pin
+  // the bare specifier to the portable build (its `default` export) so the
+  // worker and main thread share one DOM-free implementation. The package is
+  // a direct dependency only so this resolve() works under pnpm's strict
+  // node_modules layout.
+  resolve: {
+    alias: {
+      "decode-named-character-reference": require.resolve(
+        "decode-named-character-reference",
+      ),
+    },
+  },
 
   // Pre-declare every node_modules entry that's reached only through a
   // dynamic / lazy `import(...)` (TerminalPane, MarkdownEditor,
