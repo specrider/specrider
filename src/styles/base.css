@@ -128,8 +128,12 @@ textarea {
 .app {
   height: 100vh;
   display: grid;
-  grid-template-rows: 38px 1fr;
+  grid-template-rows: 38px auto 1fr;
   background: var(--paper);
+}
+.app-banners {
+  min-width: 0;
+  min-height: 0;
 }
 
 /* Off-screen but exposed to assistive tech. Used for headings and

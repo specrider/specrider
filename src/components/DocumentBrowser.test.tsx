@@ -129,6 +129,21 @@ describe("DocumentBrowser", () => {
     expect(screen.queryByRole("treeitem", { name: /Done Plan/ })).toBeNull();
   });
 
+  it("does not apply raw folder names as CSS classes", () => {
+    renderBrowser({
+      plans: [
+        plan("app/notes.md", "App Notes"),
+        plan("active/alpha.md", "Alpha Plan"),
+      ],
+    });
+
+    const appFolder = screen.getByRole("treeitem", { name: /APP/ });
+    const activeFolder = screen.getByRole("treeitem", { name: /ACTIVE/ });
+
+    expect(appFolder.classList.contains("app")).toBe(false);
+    expect(activeFolder.classList.contains("bucket-active")).toBe(true);
+  });
+
   it("selects a visible document row", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();

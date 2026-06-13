@@ -435,10 +435,10 @@ body.density-comfortable .ol-task-row {
 /* App grid — title bar height. The .app rule sets 38px by default;
    densify or pad in dense/comfortable modes. */
 body.density-dense .app:not(.empty) {
-  grid-template-rows: 32px 1fr;
+  grid-template-rows: 32px auto 1fr;
 }
 body.density-comfortable .app:not(.empty) {
-  grid-template-rows: 42px 1fr;
+  grid-template-rows: 42px auto 1fr;
 }
 
 /* Top-of-pane bars (Documents tab, reader path bar, outline/commits
