@@ -1062,8 +1062,10 @@ function App() {
           onOpenUncommitted={openUncommittedChanges}
           onOpenUpdate={openUpdateModal}
         />
-        <GitOverlays onOpenPlan={onSelectPlan} />
-        <WorkspaceConfigPrompt plansRoot={plansRoot} />
+        <div className="app-banners">
+          <GitOverlays onOpenPlan={onSelectPlan} />
+          <WorkspaceConfigPrompt plansRoot={plansRoot} />
+        </div>
         {updateModalOpen && updaterState.update && (
           <UpdateAvailable state={updaterState} onClose={closeUpdateModal} />
         )}

@@ -171,16 +171,16 @@
   background: var(--ink-4);
   flex-shrink: 0;
 }
-.tree-folder.active .bdot {
+.tree-folder.bucket-active .bdot {
   background: var(--accent);
 }
-.tree-folder.upcoming .bdot {
+.tree-folder.bucket-upcoming .bdot {
   background: var(--amber);
 }
-.tree-folder.backlog .bdot {
+.tree-folder.bucket-backlog .bdot {
   background: var(--ink-3);
 }
-.tree-folder.archive .bdot {
+.tree-folder.bucket-archive .bdot {
   background: var(--ink-4);
 }
 

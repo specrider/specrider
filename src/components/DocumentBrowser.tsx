@@ -152,6 +152,12 @@ function wellKnownIndex(name: string): number {
   return i >= 0 ? i : 100;
 }
 
+function folderBucketClass(name: string): string | null {
+  return (KNOWN_BUCKETS as readonly string[]).includes(name)
+    ? `bucket-${name}`
+    : null;
+}
+
 function filterTree(nodes: TreeNode[], q: string): TreeNode[] {
   if (!q) return nodes;
   const lower = q.toLowerCase();
@@ -1177,7 +1183,7 @@ function renderNodes(
           className={[
             "tree-folder",
             `depth-${depth}`,
-            n.name,
+            folderBucketClass(n.name),
             open ? "open" : "",
             isDropTarget ? "drop-target" : "",
             isActiveNode ? "tree-active" : "",
